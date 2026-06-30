@@ -172,9 +172,7 @@ var ROUTES = [
 
 var stopIds = [];
 var etaData = {};
-var initDone = false;
 
-// ── Clock ──
 function updateClock() {
   var now = new Date();
   var hh = ('0'+now.getHours()).slice(-2);
@@ -187,88 +185,61 @@ function updateClock() {
 setInterval(updateClock, 5000);
 updateClock();
 
-// ── XMLHttpRequest wrapper (works on old iOS) ──
 function xhrGet(url, cb) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url, true);
   xhr.timeout = 10000;
   xhr.onreadystatechange = function() {
     if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        try { cb(null, JSON.parse(xhr.responseText)); }
-        catch(e) { cb(e); }
-      } else {
-        cb(new Error('HTTP '+xhr.status));
-      }
+      if (xhr.status === 200) { try { cb(null, JSON.parse(xhr.responseText)); } catch(e) { cb(e); } }
+      else { cb(new Error('HTTP '+xhr.status)); }
     }
   };
-  xhr.ontimeout = function() { cb(new Error('timeout')); };
-  xhr.onerror   = function() { cb(new Error('network')); };
   xhr.send();
 }
 
-// ── Find Stop IDs ──
 function findStops(done) {
-  document.getElementById('loading-txt').textContent = '搜尋巴士站…';
   xhrGet('https://data.etabus.gov.hk/v1/transport/kmb/stop', function(err, json) {
     if (err) { done(); return; }
     var found = [];
     var data = json.data || [];
     for (var i=0; i<data.length; i++) {
-      var s = data[i];
-      if (s.name_en && s.name_en.toUpperCase().indexOf('NGA TSIN WAI') !== -1) {
-        found.push(s.stop);
-      }
+      if (data[i].name_en && data[i].name_en.toUpperCase().indexOf('NGA TSIN WAI') !== -1) found.push(data[i].stop);
     }
     stopIds = found;
     done();
   });
 }
 
-// ── Fetch ETA ──
 function fetchETA(done) {
   if (!stopIds.length) { if(done) done(); return; }
   var now = new Date();
   var newEta = {};
   for (var i=0; i<ROUTES.length; i++) newEta[ROUTES[i].route] = [];
-
   var remaining = stopIds.length;
   function finish() {
     remaining--;
     if (remaining <= 0) {
-      // dedupe & sort
       for (var r in newEta) {
-        var arr = newEta[r];
-        arr.sort(function(a,b){return a-b;});
-        var uniq = [];
-        for (var j=0; j<arr.length; j++) {
-          if (uniq.indexOf(arr[j]) === -1) uniq.push(arr[j]);
-        }
-        newEta[r] = uniq.slice(0,3);
+        newEta[r].sort(function(a,b){return a-b;});
+        newEta[r] = newEta[r].slice(0,3);
       }
       etaData = newEta;
       renderETA();
-      var ts = new Date();
-      var hh=('0'+ts.getHours()).slice(-2), mm=('0'+ts.getMinutes()).slice(-2), ss=('0'+ts.getSeconds()).slice(-2);
-      document.getElementById('last-update').textContent = '上次更新：'+hh+':'+mm+':'+ss;
       if (done) done();
     }
   }
-
   for (var s=0; s<stopIds.length; s++) {
     (function(sid) {
       xhrGet('https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/'+sid, function(err, json) {
         if (!err && json && json.data) {
           for (var k=0; k<json.data.length; k++) {
             var item = json.data[k];
-            var wanted = null;
-            for (var r=0; r<ROUTES.length; r++) {
-              if (ROUTES[r].route === item.route) { wanted = ROUTES[r]; break; }
-            }
-            if (!wanted || !item.eta) continue;
             var diffMs = new Date(item.eta) - now;
             var mins = Math.round(diffMs / 60000);
-            if (mins >= -1 && mins <= 90) newEta[item.route].push(mins);
+            if (etaData.hasOwnProperty(item.route) || newEta.hasOwnProperty(item.route)) {
+                if (mins >= -1 && mins <= 90) newEta[item.route].push(mins);
+            }
           }
         }
         finish();
@@ -277,7 +248,6 @@ function fetchETA(done) {
   }
 }
 
-// ── Render ──
 function renderETA() {
   var list = document.getElementById('eta-list');
   list.innerHTML = '';
@@ -285,104 +255,36 @@ function renderETA() {
     var cfg = ROUTES[i];
     var mins = etaData[cfg.route] || [];
     var first = mins.length ? mins[0] : null;
-    var cls = 'noservice';
-    if (first !== null) {
-      if (first <= 1) cls = 'arriving';
-      else if (first <= 4) cls = 'soon';
-      else cls = 'normal';
-    }
-    var minsDisplay = first === null ? '–' : (first <= 0 ? '▶' : first);
-    var unitDisplay = first === null ? '暫無班次' : (first <= 0 ? '即將抵達' : '分鐘');
-    var nextArr = mins.slice(1);
-    var nextHint = '';
-    for (var j=0; j<nextArr.length; j++) nextHint += (j?'/':'')+nextArr[j]+'分';
-
+    var cls = (first === null) ? 'noservice' : (first <= 1 ? 'arriving' : (first <= 4 ? 'soon' : 'normal'));
     var row = document.createElement('div');
     row.className = 'erow '+cls;
-    row.innerHTML =
-      '<div class="rnum">'+cfg.route+'</div>'+
-      '<div class="dblock">'+
-        '<div class="dlabel">往 To</div>'+
-        '<div class="dzh">'+cfg.destZh+'</div>'+
-        '<div class="den">'+cfg.destEn+(nextHint?' <span style="color:#666;font-size:.85em">'+nextHint+'</span>':'')+'</div>'+
-      '</div>'+
-      '<div class="etabox">'+
-        '<div class="emins">'+minsDisplay+'</div>'+
-        '<div class="eunit">'+unitDisplay+'</div>'+
-      '</div>';
+    row.innerHTML = '<div class="rnum">'+cfg.route+'</div><div class="dblock"><div class="dlabel">往 To</div><div class="dzh">'+cfg.destZh+'</div><div class="den">'+cfg.destEn+'</div></div><div class="etabox"><div class="emins">'+(first === null ? '–' : (first <= 0 ? '▶' : first))+'</div><div class="eunit">'+(first === null ? '暫無班次' : (first <= 0 ? '即將抵達' : '分鐘'))+'</div></div>';
     list.appendChild(row);
   }
 }
 
-// ── Weather ──
-var WARN_LABEL = {
-  'TC_SIGNAL_3':'🌀 三號風球','TC_SIGNAL_8_NE':'🌀 八號東北','TC_SIGNAL_8_SE':'🌀 八號東南',
-  'TC_SIGNAL_8_NW':'🌀 八號西北','TC_SIGNAL_8_SW':'🌀 八號西南',
-  'TC_SIGNAL_9':'🌀 九號風球','TC_SIGNAL_10':'🌀 十號颶風',
-  'RAINSTORM_WARNING_AMBER':'🟡 黃色暴雨','RAINSTORM_WARNING_RED':'🔴 紅色暴雨',
-  'RAINSTORM_WARNING_BLACK':'⚫ 黑色暴雨',
-  'COLD_WEATHER_WARNING':'🔵 寒冷天氣','HOT_WEATHER_WARNING':'🔴 酷熱天氣',
-  'FROST_WARNING':'❄️ 霜凍'
-};
-var WARN_CSS = {
-  'TC_SIGNAL_3':'wT3','TC_SIGNAL_8_NE':'wT8','TC_SIGNAL_8_SE':'wT8',
-  'TC_SIGNAL_8_NW':'wT8','TC_SIGNAL_8_SW':'wT8','TC_SIGNAL_9':'wT8','TC_SIGNAL_10':'wT10',
-  'RAINSTORM_WARNING_AMBER':'wAMBER','RAINSTORM_WARNING_RED':'wRED','RAINSTORM_WARNING_BLACK':'wBLACK',
-  'COLD_WEATHER_WARNING':'wCOLD','HOT_WEATHER_WARNING':'wHEAT','FROST_WARNING':'wCOLD'
-};
 var ICONS = {50:'☀️',51:'🌤️',52:'🌤️',53:'⛅',54:'🌧️',60:'🌧️',61:'⛈️',62:'⛈️',63:'🌩️',64:'🌩️',65:'🌧️',70:'☁️',71:'☁️',76:'🌫️',80:'🌦️',85:'⛈️',90:'🌡️'};
 
 function fetchWeather() {
   xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc', function(err, obs) {
     if (!err && obs) {
-      var temp='--', humid='--';
-      var tArr = obs.temperature&&obs.temperature.data||[];
-      for(var i=0;i<tArr.length;i++){if(tArr[i].place==='九龍城'){temp=Math.round(tArr[i].value);break;}}
-      if(temp==='--'&&tArr.length) temp=Math.round(tArr[0].value);
-      var hArr = obs.humidity&&obs.humidity.data||[];
-      for(var j=0;j<hArr.length;j++){if(hArr[j].place==='九龍城'){humid=hArr[j].value;break;}}
-      if(humid==='--'&&hArr.length) humid=hArr[j].value;
-      var icon = obs.icon&&obs.icon[0] ? (ICONS[obs.icon[0]]||'🌡️') : '🌡️';
-      var desc = obs.text ? obs.text.substring(0,50) : '';
-      document.getElementById('w-icon').textContent = icon;
-      document.getElementById('weather-temp').textContent = temp+'°C';
-      document.getElementById('weather-desc').textContent = desc;
-      document.getElementById('weather-humidity').textContent = '💧'+humid+'%';
-    }
-  });
-  xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc', function(err, warn) {
-    if (err || !warn) return;
-    var badges = document.getElementById('warning-badges');
-    badges.innerHTML = '';
-    var tickerWarns = [];
-    for (var code in warn) {
-      if (warn[code] && warn[code].inForce) {
-        var label = WARN_LABEL[code] || code;
-        var css   = WARN_CSS[code]  || 'wT3';
-        var b = document.createElement('span');
-        b.className = 'warn-badge '+css;
-        b.textContent = label;
-        badges.appendChild(b);
-        tickerWarns.push(label);
-      }
-    }
-    if (tickerWarns.length) {
-      document.getElementById('ticker-inner').textContent =
-        '⚠️ '+tickerWarns.join('  │  ')+'  │  排隊候車，先落後上 Please queue and let passengers alight first';
+      var t=0, h=0;
+      obs.temperature.data.forEach(function(i){if(i.place==='九龍城')t=i.value;});
+      obs.humidity.data.forEach(function(i){if(i.place==='九龍城')h=i.value;});
+      document.getElementById('w-icon').textContent = obs.icon[0] ? (ICONS[obs.icon[0]]||'🌡️') : '🌡️';
+      document.getElementById('weather-temp').textContent = t+'°C';
+      document.getElementById('weather-humidity').textContent = '💧'+h+'%';
+      document.getElementById('weather-desc').textContent = obs.text;
     }
   });
 }
 
-// ── Boot ──
 findStops(function() {
-  document.getElementById('loading-txt').textContent = '載入到站時間…';
-  fetchETA(function() {
-    fetchWeather();
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').className = 'show';
-    setInterval(fetchETA, 60000);
-    setInterval(fetchWeather, 300000);
-  });
+  fetchETA();
+  fetchWeather();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').className = 'show';
+  setInterval(fetchETA, 60000);
 });
 </script>
 </body>
