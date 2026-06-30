@@ -8,59 +8,439 @@
 <title>衙前圍道巴士站</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-:root { --gold:#c8a400; --bg:#121212; --txt:#fff; }
-html, body { height:100%; background:var(--bg); color:var(--txt); font-family:sans-serif; overflow:hidden; }
-#app { display:flex; flex-direction:column; height:100vh; }
-/* 頂部 Header */
-#top-panel { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#1a1a1a; }
-#stop-name { font-size:24px; font-weight:bold; }
-#clock { font-size:48px; font-weight:bold; }
-/* 中間列表 */
-#eta-list { flex:1; display:flex; flex-direction:column; }
-.row { display:flex; align-items:center; padding:15px 20px; border-bottom:1px solid #333; }
-.route { width:80px; font-size:32px; font-weight:bold; }
-.dest { flex:1; font-size:20px; }
-.eta { font-size:32px; font-weight:bold; color:var(--gold); }
-/* 底部天氣 */
-#weather-bar { padding:15px 20px; background:#000; display:flex; align-items:center; gap:20px; font-size:24px; border-top:2px solid var(--gold); }
-#ticker { background:var(--gold); color:#000; padding:5px 20px; font-weight:bold; white-space:nowrap; overflow:hidden; }
+:root {
+  --gold:#c8a400; --red:#e53935; --orange:#fb8c00; --green:#43a047;
+  --bg:#0d0d0d; --bg2:#161616; --txt:#f0f0f0; --dim:#888;
+}
+html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Arial Black','Arial',sans-serif; overflow:hidden; }
+#app { display:none; -webkit-flex-direction:column; flex-direction:column; height:100vh; }
+#app.show { display:-webkit-flex; display:flex; }
+
+/* Header */
+#header {
+  background:var(--bg2); border-bottom:3px solid var(--gold);
+  display:-webkit-flex; display:flex;
+  -webkit-align-items:center; align-items:center;
+  -webkit-justify-content:space-between; justify-content:space-between;
+  padding:10px 14px; -webkit-flex-shrink:0; flex-shrink:0;
+}
+#stop-zh { font-size:28px; font-weight:900; }
+#stop-en { font-size:13px; color:var(--dim); margin-top:2px; }
+#clock { font-size:56px; font-weight:900; letter-spacing:2px; line-height:1; color:#fff; }
+#dateline { font-size:13px; color:var(--dim); text-align:right; margin-top:2px; }
+
+/* 專為舊版 iPad 直屏設計的高質感天氣儀表板 */
+#weather-box {
+  background:#0f1c2e; border-bottom:2px solid #1e3a5f;
+  display:-webkit-flex; display:flex;
+  -webkit-align-items:center; align-items:center;
+  -webkit-justify-content:space-between; justify-content:space-between;
+  padding:12px 16px; -webkit-flex-shrink:0; flex-shrink:0;
+}
+.w-left {
+  display:-webkit-flex; display:flex;
+  -webkit-align-items:center; align-items:center;
+  gap:14px;
+}
+#w-icon { 
+  font-size:56px; 
+  display:inline-block; /* 核心修正：強迫舊iOS必須放大Emoji */
+  line-height:1; 
+  vertical-align:middle;
+}
+#weather-temp { 
+  font-size:52px; font-weight:900; color:#7eb8f7; line-height:1; 
+}
+.w-right {
+  display:-webkit-flex; display:flex;
+  -webkit-flex-direction:column; flex-direction:column;
+  -webkit-align-items:flex-end; align-items:flex-end;
+  gap:4px;
+}
+.w-text-row { font-size:16px; font-weight:700; color:#aac4e8; }
+#weather-humidity { color:#7eb8f7; margin-right:12px; font-weight:900; }
+#weather-desc { color:#fff; }
+
+/* 純 CSS 警告方塊區 */
+#warning-badges { 
+  display:-webkit-flex; display:flex; 
+  gap:8px; -webkit-flex-wrap:wrap; flex-wrap:wrap;
+  -webkit-justify-content:flex-end; justify-content:flex-end;
+}
+.warn-badge {
+  display:inline-block;
+  padding:5px 10px; border-radius:4px; font-weight:900; font-size:15px; color:#fff;
+  text-align:center; box-shadow:0 0 4px rgba(0,0,0,0.5);
+  -webkit-animation:blink 1.2s infinite; animation:blink 1.2s infinite;
+}
+/* 各種警告的專屬高亮電子色調 */
+.wWTS   { background:#7b1fa2; color:#fff; border:1px solid #9c27b0; } /* 雷暴深紫 */
+.wTC    { background:#ff6600; color:#fff; } /* 颱風橘紅 */
+.wRAIN  { background:#cc0000; color:#fff; } /* 暴雨純紅 */
+.wAMBER { background:#ffaa00; color:#000; } 
+.wRED   { background:#cc0000; color:#fff; }
+.wBLACK { background:#000000; color:#fff; border:2px solid #fff; }
+.wCOLD  { background:#1a6ee6; color:#fff; }
+.wHEAT  { background:#e64a19; color:#fff; }
+@-webkit-keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* 欄位標頭 */
+#col-hdr {
+  display:-webkit-flex; display:flex;
+  background:var(--gold); color:#000; font-weight:900; font-size:15px;
+  padding:6px 14px; -webkit-flex-shrink:0; flex-shrink:0;
+}
+#col-hdr .c1 { width:110px; }
+#col-hdr .c2 { -webkit-flex:1; flex:1; }
+#col-hdr .c3 { width:110px; text-align:right; }
+
+/* ETA 列表 */
+#eta-list { -webkit-flex:1; flex:1; display:-webkit-flex; display:flex; -webkit-flex-direction:column; flex-direction:column; gap:2px; padding:4px 0; overflow:hidden; }
+
+.erow {
+  display:-webkit-flex; display:flex;
+  -webkit-align-items:center; align-items:center;
+  padding:10px 14px; gap:8px;
+  border-left:6px solid #333;
+  -webkit-flex:1; flex:1; min-height:0;
+}
+.erow:nth-child(odd)  { background:#181818; }
+.erow:nth-child(even) { background:#131313; }
+.erow.arriving { border-left-color:var(--red); background:#1c0808; -webkit-animation:pr 1.4s infinite; animation:pr 1.4s infinite; }
+.erow.soon     { border-left-color:var(--orange); background:#1a1000; }
+.erow.normal   { border-left-color:var(--green); }
+@-webkit-keyframes pr { 0%,100%{background:#1c0808} 50%{background:#2a0d0d} }
+@keyframes pr { 0%,100%{background:#1c0808} 50%{background:#2a0d0d} }
+
+.rnum { font-size:38px; font-weight:900; line-height:1; width:110px; -webkit-flex-shrink:0; flex-shrink:0; }
+.dblock { -webkit-flex:1; flex:1; }
+.dlabel { font-size:11px; color:var(--dim); }
+.dzh { font-size:21px; font-weight:700; line-height:1.2; }
+.den { font-size:12px; color:#999; }
+.etabox { width:110px; text-align:right; -webkit-flex-shrink:0; flex-shrink:0; }
+.emins { font-size:42px; font-weight:900; line-height:1; }
+.eunit { font-size:12px; color:var(--dim); }
+.arriving .emins { color:var(--red); }
+.soon     .emins { color:var(--orange); }
+.normal   .emins { color:var(--green); }
+.noservice .emins { color:#555; font-size:16px; }
+
+/* Status */
+#statusbar {
+  background:#0d0d0d; border-top:1px solid #222;
+  font-size:11px; color:#555; padding:4px 14px;
+  display:-webkit-flex; display:flex;
+  -webkit-justify-content:space-between; justify-content:space-between;
+  -webkit-flex-shrink:0; flex-shrink:0;
+}
+
+/* Ticker */
+#ticker {
+  background:var(--gold); color:#000; font-weight:700; font-size:14px;
+  padding:6px 0; overflow:hidden; white-space:nowrap;
+  -webkit-flex-shrink:0; flex-shrink:0;
+}
+#ticker-inner { display:inline-block; padding-left:100%; -webkit-animation:sc 35s linear infinite; animation:sc 35s linear infinite; }
+@-webkit-keyframes sc { to { -webkit-transform:translateX(-100%); transform:translateX(-100%); } }
+@keyframes sc { to { -webkit-transform:translateX(-100%); transform:translateX(-100%); } }
+
+/* Loading */
+#loading { position:fixed; inset:0; top:0; left:0; right:0; bottom:0; background:#0d0d0d; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; z-index:99; -webkit-flex-direction:column; flex-direction:column; gap:12px; }
+#loading-txt { color:#888; font-size:16px; }
+.spin { width:36px; height:36px; border:4px solid #333; border-top-color:var(--gold); border-radius:50%; -webkit-animation:sp .8s linear infinite; animation:sp .8s linear infinite; }
+@-webkit-keyframes sp { to { -webkit-transform:rotate(360deg); transform:rotate(360deg); } }
+@keyframes sp { to { -webkit-transform:rotate(360deg); transform:rotate(360deg); } }
 </style>
 </head>
 <body>
+
+<div id="loading">
+  <div class="spin"></div>
+  <div id="loading-txt">正在載入…</div>
+</div>
+
 <div id="app">
-  <div id="top-panel">
-    <div id="stop-name">衙前圍道<br><span style="font-size:14px; color:#888;">Nga Tsin Wai Road</span></div>
-    <div id="clock">--:--</div>
+  <div id="header">
+    <div>
+      <div id="stop-zh">衙前圍道</div>
+      <div id="stop-en">Nga Tsin Wai Road</div>
+    </div>
+    <div>
+      <div id="clock">--:--</div>
+      <div id="dateline"></div>
+    </div>
   </div>
+  
+  <div id="weather-box">
+    <div class="w-left">
+      <span id="w-icon">🌡️</span>
+      <span id="weather-temp">--°C</span>
+    </div>
+    <div class="w-right">
+      <div class="w-text-row">
+        <span id="weather-humidity">💧 --%</span>
+        <span id="weather-desc">載入中…</span>
+      </div>
+      <div id="warning-badges"></div>
+    </div>
+  </div>
+
+  <div id="col-hdr">
+    <span class="c1">路線 Route</span>
+    <span class="c2">目的地 Destination</span>
+    <span class="c3">到站 ETA</span>
+  </div>
+  
   <div id="eta-list"></div>
-  <div id="weather-bar">
-    <span id="temp">--°C</span>
-    <span id="humid">💧 --%</span>
+
+  <div id="statusbar">
+    <span id="last-update">尚未更新</span>
+    <span>每分鐘自動更新 · KMB + 天文台</span>
   </div>
-  <div id="ticker">🚌 排隊候車，先落後上 · Please queue · 衙前圍道 Nga Tsin Wai Road</div>
+  
+  <div id="ticker"><span id="ticker-inner">🚌 排隊候車，先落後上 · Please queue · 衙前圍道 Nga Tsin Wai Road</span></div>
 </div>
 
 <script>
-const ROUTES = ['11D','75X','85','85A','1'];
-const destMap = {'11D':'樂富','75X':'大埔(富善)','85':'火炭','85A':'廣源','1':'尖沙咀'};
+var ROUTES = [
+  { route:'11D', destZh:'樂富',       destEn:'Lok Fu'            },
+  { route:'75X', destZh:'大埔(富善)', destEn:'Tai Po (Fu Shin)'  },
+  { route:'85',  destZh:'火炭',       destEn:'Fo Tan'            },
+  { route:'85A', destZh:'廣源',       destEn:'Kwong Yuen'        },
+  { route:'1',   destZh:'尖沙咀',     destEn:'Tsim Sha Tsui'     }
+];
 
-function update() {
-  // 時間
-  const now = new Date();
-  document.getElementById('clock').textContent = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-  
-  // 模擬取數據 (您原本的邏輯)
-  fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc')
-    .then(r => r.json())
-    .then(d => {
-       const t = d.temperature.data.find(i => i.place === '九龍城')?.value || '--';
-       const h = d.humidity.data.find(i => i.place === '九龍城')?.value || '--';
-       document.getElementById('temp').textContent = t + '°C';
-       document.getElementById('humid').textContent = '💧 ' + h + '%';
-    });
+var stopIds = [];
+var etaData = {};
+
+// ── Clock ──
+function updateClock() {
+  var now = new Date();
+  var hh = ('0'+now.getHours()).slice(-2);
+  var mm = ('0'+now.getMinutes()).slice(-2);
+  document.getElementById('clock').textContent = hh+':'+mm;
+  var days=['日','一','二','三','四','五','六'];
+  document.getElementById('dateline').textContent =
+    now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 ('+days[now.getDay()]+')';
 }
-setInterval(update, 60000);
-update();
+setInterval(updateClock, 5000);
+updateClock();
+
+// ── XMLHttpRequest ──
+function xhrGet(url, cb) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.timeout = 10000;
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        try { cb(null, JSON.parse(xhr.responseText)); }
+        catch(e) { cb(e); }
+      } else {
+        cb(new Error('HTTP '+xhr.status));
+      }
+    }
+  };
+  xhr.ontimeout = function() { cb(new Error('timeout')); };
+  xhr.onerror   = function() { cb(new Error('network')); };
+  xhr.send();
+}
+
+// ── Find Stop IDs ──
+function findStops(done) {
+  document.getElementById('loading-txt').textContent = '搜尋巴士站…';
+  xhrGet('https://data.etabus.gov.hk/v1/transport/kmb/stop', function(err, json) {
+    if (err) { done(); return; }
+    var found = [];
+    var data = json.data || [];
+    for (var i=0; i<data.length; i++) {
+      var s = data[i];
+      if (s.name_en && s.name_en.toUpperCase().indexOf('NGA TSIN WAI') !== -1) {
+        found.push(s.stop);
+      }
+    }
+    stopIds = found;
+    done();
+  });
+}
+
+// ── Fetch ETA ──
+function fetchETA(done) {
+  if (!stopIds.length) { if(done) done(); return; }
+  var now = new Date();
+  var newEta = {};
+  for (var i=0; i<ROUTES.length; i++) newEta[ROUTES[i].route] = [];
+
+  var remaining = stopIds.length;
+  function finish() {
+    remaining--;
+    if (remaining <= 0) {
+      for (var r in newEta) {
+        var arr = newEta[r];
+        arr.sort(function(a,b){return a-b;});
+        var uniq = [];
+        for (var j=0; j<arr.length; j++) {
+          if (uniq.indexOf(arr[j]) === -1) uniq.push(arr[j]);
+        }
+        newEta[r] = uniq.slice(0,3);
+      }
+      etaData = newEta;
+      renderETA();
+      var ts = new Date();
+      var hh=('0'+ts.getHours()).slice(-2), mm=('0'+ts.getMinutes()).slice(-2), ss=('0'+ts.getSeconds()).slice(-2);
+      document.getElementById('last-update').textContent = '上次更新：'+hh+':'+mm+':'+ss;
+      if (done) done();
+    }
+  }
+
+  for (var s=0; s<stopIds.length; s++) {
+    (function(sid) {
+      xhrGet('https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/'+sid, function(err, json) {
+        if (!err && json && json.data) {
+          for (var k=0; k<json.data.length; k++) {
+            var item = json.data[k];
+            var wanted = null;
+            for (var r=0; r<ROUTES.length; r++) {
+              if (ROUTES[r].route === item.route) { wanted = ROUTES[r]; break; }
+            }
+            if (!wanted || !item.eta) continue;
+            var diffMs = new Date(item.eta) - now;
+            var mins = Math.round(diffMs / 60000);
+            if (mins >= -1 && mins <= 90) newEta[item.route].push(mins);
+          }
+        }
+        finish();
+      });
+    })(stopIds[s]);
+  }
+}
+
+// ── Render ──
+function renderETA() {
+  var list = document.getElementById('eta-list');
+  list.innerHTML = '';
+  for (var i=0; i<ROUTES.length; i++) {
+    var cfg = ROUTES[i];
+    var mins = etaData[cfg.route] || [];
+    var first = mins.length ? mins[0] : null;
+    var cls = 'noservice';
+    if (first !== null) {
+      if (first <= 1) cls = 'arriving';
+      else if (first <= 4) cls = 'soon';
+      else cls = 'normal';
+    }
+    var minsDisplay = first === null ? '–' : (first <= 0 ? '▶' : first);
+    var unitDisplay = first === null ? '暫無班次' : (first <= 0 ? '即將抵達' : '分鐘');
+    var nextArr = mins.slice(1);
+    var nextHint = '';
+    for (var j=0; j<nextArr.length; j++) nextHint += (j?'/':'')+nextArr[j]+'分';
+
+    var row = document.createElement('div');
+    row.className = 'erow '+cls;
+    row.innerHTML =
+      '<div class="rnum">'+cfg.route+'</div>'+
+      '<div class="dblock">'+
+        '<div class="dlabel">往 To</div>'+
+        '<div class="dzh">'+cfg.destZh+'</div>'+
+        '<div class="den">'+cfg.destEn+(nextHint?' <span style="color:#666;font-size:.85em">'+nextHint+'</span>':'')+'</div>'+
+      '</div>'+
+      '<div class="etabox">'+
+        '<div class="emins">'+minsDisplay+'</div>'+
+        '<div class="eunit">'+unitDisplay+'</div>'+
+      '</div>';
+    list.appendChild(row);
+  }
+}
+
+// ── 天文台官方 API 警告對照表 (全面本地化，拒絕外部破圖圖片) ──
+var WARN_LABEL = {
+  'WTS': '⚡ 雷暴警告',
+  'WTC': '🌀 熱帶氣旋',
+  'WRAIN': '🌧️ 暴雨警告',
+  'WCOLD': '❄️ 寒冷天氣',
+  'WHOT': '☀️ 酷熱天氣',
+  'WSTRONG': '🍃 強烈季候風',
+  'WFIREY': '🔥 黃色火災',
+  'WFIRER': '🔥 紅色火災',
+  'WFLOOD': '🌊 新界北部水浸',
+  'WLANDSLIP': '⛰️ 山泥傾瀉',
+  'WFROST': '❄️ 霜凍警告'
+};
+
+var WARN_CSS = {
+  'WTS': 'wWTS', 'WTC': 'wTC', 'WRAIN': 'wRAIN', 'WCOLD': 'wCOLD', 'WHOT': 'wHEAT', 'WSTRONG': 'wCOLD',
+  'WFIREY': 'wAMBER', 'WFIRER': 'wRED', 'WFLOOD': 'wTC', 'WLANDSLIP': 'wRED', 'WFROST': 'wCOLD'
+};
+
+var ICONS = {50:'☀️',51:'🌤️',52:'🌤️',53:'⛅',54:'🌧️',60:'🌧️',61:'⛈️',62:'⛈️',63:'🌩️',64:'🌩️',65:'🌧️',70:'☁️',71:'☁️',76:'🌫️',80:'🌦️',85:'⛈️',90:'🌡️'};
+
+function fetchWeather() {
+  // 抓取溫度與天氣概況
+  xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc', function(err, obs) {
+    if (!err && obs) {
+      var temp='--', humid='--';
+      var tArr = obs.temperature&&obs.temperature.data||[];
+      for(var i=0;i<tArr.length;i++){if(tArr[i].place==='九龍城'){temp=Math.round(tArr[i].value);break;}}
+      if(temp==='--'&&tArr.length) temp=Math.round(tArr[0].value);
+      var hArr = obs.humidity&&obs.humidity.data||[];
+      for(var j=0;j<hArr.length;j++){if(hArr[j].place==='九龍城'){humid=hArr[j].value;break;}}
+      if(humid==='--'&&hArr.length) humid=hArr[0].value;
+      var icon = obs.icon&&obs.icon[0] ? (ICONS[obs.icon[0]]||'🌡️') : '🌡️';
+      var desc = obs.text ? obs.text.substring(0,50) : '';
+      
+      document.getElementById('w-icon').textContent = icon;
+      document.getElementById('weather-temp').textContent = temp+'°C';
+      document.getElementById('weather-desc').textContent = desc;
+      document.getElementById('weather-humidity').textContent = '💧 '+humid+'%';
+    }
+  });
+  
+  // 抓取警告摘要
+  xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc', function(err, warn) {
+    if (err || !warn) return;
+    var badges = document.getElementById('warning-badges');
+    badges.innerHTML = '';
+    var tickerWarns = [];
+    
+    for (var code in warn) {
+      var wObj = warn[code];
+      // 只要狀態不是 CANCEL，就代表正在生效
+      if (wObj && wObj.actionCode !== 'CANCEL') {
+        var label = WARN_LABEL[code] || code;
+        var css = WARN_CSS[code] || 'wT3';
+        
+        // 核心修正：改用 100% 穩定的純 CSS 閃爍文字方塊，徹底消滅藍色問號
+        var b = document.createElement('span');
+        b.className = 'warn-badge ' + css;
+        b.textContent = label;
+        badges.appendChild(b);
+        
+        tickerWarns.push(label);
+      }
+    }
+    
+    if (tickerWarns.length) {
+      document.getElementById('ticker-inner').textContent =
+        '⚠️ 本港正生效：' + tickerWarns.join('  │  ') + '  │  請乘客留意天氣變化，排隊候車，先落後上。';
+    } else {
+      document.getElementById('ticker-inner').textContent = 
+        '🚌 排隊候車，先落後上 · Please queue · 衙前圍道 Nga Tsin Wai Road';
+    }
+  });
+}
+
+// ── Boot ──
+findStops(function() {
+  document.getElementById('loading-txt').textContent = '載入到站時間…';
+  fetchETA(function() {
+    fetchWeather();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').className = 'show';
+    setInterval(fetchETA, 60000);
+    setInterval(fetchWeather, 300000);
+  });
+});
 </script>
 </body>
 </html>
