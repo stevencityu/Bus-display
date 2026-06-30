@@ -37,7 +37,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   min-height:0; overflow:hidden;
 }
 
-/* 固定巴士板總寬度，收窄紅圈多餘空間 */
+/* 固定巴士板總寬度，收窄多餘空間 */
 #eta-container {
   width: 540px;
   -webkit-flex-shrink: 0; flex-shrink: 0;
@@ -87,7 +87,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 .normal   .emins { color:var(--green); }
 .noservice .emins { color:#555; font-size:16px; }
 
-/* ── 右側天氣欄位（採用一體化深色、自動填滿右邊） ── */
+/* 右側天氣欄位 */
 #weather-bar {
   background:var(--bg2); border-left:2px solid #282828;
   -webkit-flex:1; flex:1;
@@ -98,7 +98,6 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   padding:20px 15px; -webkit-flex-shrink:0; flex-shrink:0;
 }
 
-/* 天氣大圖示與溫度區塊（強制分行垂直排列） */
 #w-main-info { 
   display:-webkit-flex; display:flex; 
   -webkit-flex-direction:column; flex-direction:column;
@@ -106,7 +105,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   gap:12px; width:100%;
 }
 #w-icon { 
-  font-size:120px; /* 這裡已徹底放大至巨型 120px */
+  font-size:120px; 
   line-height:1; display:block; text-align:center; 
 }
 #weather-temp { 
@@ -114,11 +113,10 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   line-height:1; display:block; text-align:center;
 }
 
-/* 濕度與描述 */
 #weather-humidity { color:var(--dim); font-size:22px; font-weight:900; letter-spacing:1px; }
 #weather-desc { color:#d5d5d5; font-size:18px; font-weight:700; text-align:center; line-height:1.5; padding:0 12px; }
 
-/* 天氣警告圖標容器 */
+/* 天氣警告圖標區 */
 #warning-badges { 
   display:-webkit-flex; display:flex; 
   -webkit-flex-direction:row; flex-direction:row; 
@@ -371,56 +369,50 @@ function renderETA() {
   }
 }
 
-// ── Weather Data Mapping ──
-/* 支援所有潛在勞工處「工作暑熱警告」代碼格式 */
+// ── 修正：香港天文台官方 API 警告代碼對照表 ──
 var WARN_LABEL = {
-  'TC_SIGNAL_1':'🌀 一號戒備','TC_SIGNAL_3':'🌀 三號風球','TC_SIGNAL_8_NE':'🌀 八號東北','TC_SIGNAL_8_SE':'🌀 八號東南',
-  'TC_SIGNAL_8_NW':'🌀 八號西北','TC_SIGNAL_8_SW':'🌀 八號西南','TC_SIGNAL_9':'🌀 九號風球','TC_SIGNAL_10':'🌀 十號颶風',
-  'RAINSTORM_WARNING_AMBER':'🟡 黃色暴雨','RAINSTORM_WARNING_RED':'🔴 紅色暴雨','RAINSTORM_WARNING_BLACK':'⚫ 黑色暴雨',
-  'COLD_WEATHER_WARNING':'🔵 寒冷天氣','HOT_WEATHER_WARNING':'🔴 酷熱天氣','FROST_WARNING':'❄️ 霜凍',
-  'THUNDERSTORM_WARNING':'⚡ 雷暴警告','STRONG_MONSOON_SIGNAL':'🍃 強烈季候風',
-  // 工作暑熱警告多種可能出現的 API 變體
-  'HEAT_STRESS_AMBER':'🟡 工作暑熱(黃)','HEAT_STRESS_RED':'🔴 工作暑熱(紅)','HEAT_STRESS_BLACK':'⚫ 工作暑熱(黑)',
-  'WORK_HEAT_AMBER':'🟡 工作暑熱(黃)','WORK_HEAT_RED':'🔴 工作暑熱(紅)','WORK_HEAT_BLACK':'⚫ 工作暑熱(黑)',
-  'WSTRESS_AMBER':'🟡 工作暑熱(黃)','WSTRESS_RED':'🔴 工作暑熱(紅)','WSTRESS_BLACK':'⚫ 工作暑熱(黑)'
+  'WTS': '⚡ 雷暴警告',
+  'TC1': '🌀 一號戒備', 'TC3': '🌀 三號風球', 'TC8NE': '🌀 八號東北', 'TC8SE': '🌀 八號東南',
+  'TC8NW': '🌀 八號西北', 'TC8SW': '🌀 八號西南', 'TC9': '🌀 九號風球', 'TC10': '🌀 十號颶風',
+  'AMBER': '🟡 黃色暴雨', 'RED': '🔴 紅色暴雨', 'BLACK': '⚫ 黑色暴雨',
+  'VHOT': '🔴 酷熱天氣', 'COLD': '🔵 寒冷天氣', 'FROST': '❄️ 霜凍',
+  'SMS': '🍃 強烈季候風', 'WL': '⛰️ 山泥傾瀉', 'WFN': '🌊 新界北部水浸',
+  'FIREY': '🟡 黃色火災', 'FIRER': '🔴 紅色火災',
+  'ASW': '🟡 工作暑熱(黃)', 'RSW': '🔴 工作暑熱(紅)', 'BSW': '⚫ 工作暑熱(黑)'
 };
 
 var WARN_ICON = {
-  'TC_SIGNAL_1': 'https://www.hko.gov.hk/common/images/warning_icons/tc1.gif',
-  'TC_SIGNAL_3': 'https://www.hko.gov.hk/common/images/warning_icons/tc3.gif',
-  'TC_SIGNAL_8_NE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8ne.gif',
-  'TC_SIGNAL_8_SE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8se.gif',
-  'TC_SIGNAL_8_NW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8nw.gif',
-  'TC_SIGNAL_8_SW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8sw.gif',
-  'TC_SIGNAL_9': 'https://www.hko.gov.hk/common/images/warning_icons/tc9.gif',
-  'TC_SIGNAL_10': 'https://www.hko.gov.hk/common/images/warning_icons/tc10.gif',
-  'RAINSTORM_WARNING_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/rain_amber.gif',
-  'RAINSTORM_WARNING_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rain_red.gif',
-  'RAINSTORM_WARNING_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/rain_black.gif',
-  'COLD_WEATHER_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/cold.gif',
-  'HOT_WEATHER_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/vhot.gif',
-  'FROST_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/frost.gif',
-  'THUNDERSTORM_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/ts.gif',
-  'STRONG_MONSOON_SIGNAL': 'https://www.hko.gov.hk/common/images/warning_icons/sms.gif',
-  // 天文台官方工作暑熱警告動態圖標網址 (asw=黃色, rsw=紅色, bsw=黑色)
-  'HEAT_STRESS_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/asw.gif',
-  'HEAT_STRESS_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rsw.gif',
-  'HEAT_STRESS_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/bsw.gif',
-  'WORK_HEAT_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/asw.gif',
-  'WORK_HEAT_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rsw.gif',
-  'WORK_HEAT_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/bsw.gif',
-  'WSTRESS_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/asw.gif',
-  'WSTRESS_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rsw.gif',
-  'WSTRESS_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/bsw.gif'
+  'WTS': 'https://www.hko.gov.hk/common/images/warning_icons/ts.gif',
+  'TC1': 'https://www.hko.gov.hk/common/images/warning_icons/tc1.gif',
+  'TC3': 'https://www.hko.gov.hk/common/images/warning_icons/tc3.gif',
+  'TC8NE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8ne.gif',
+  'TC8SE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8se.gif',
+  'TC8NW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8nw.gif',
+  'TC8SW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8sw.gif',
+  'TC9': 'https://www.hko.gov.hk/common/images/warning_icons/tc9.gif',
+  'TC10': 'https://www.hko.gov.hk/common/images/warning_icons/tc10.gif',
+  'AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/rain_amber.gif',
+  'RED': 'https://www.hko.gov.hk/common/images/warning_icons/rain_red.gif',
+  'BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/rain_black.gif',
+  'VHOT': 'https://www.hko.gov.hk/common/images/warning_icons/vhot.gif',
+  'COLD': 'https://www.hko.gov.hk/common/images/warning_icons/cold.gif',
+  'FROST': 'https://www.hko.gov.hk/common/images/warning_icons/frost.gif',
+  'SMS': 'https://www.hko.gov.hk/common/images/warning_icons/sms.gif',
+  'WL': 'https://www.hko.gov.hk/common/images/warning_icons/landslip.gif',
+  'WFN': 'https://www.hko.gov.hk/common/images/warning_icons/ntfl.gif',
+  'FIREY': 'https://www.hko.gov.hk/common/images/warning_icons/firey.gif',
+  'FIRER': 'https://www.hko.gov.hk/common/images/warning_icons/firer.gif',
+  'ASW': 'https://www.hko.gov.hk/common/images/warning_icons/asw.gif',
+  'RSW': 'https://www.hko.gov.hk/common/images/warning_icons/rsw.gif',
+  'BSW': 'https://www.hko.gov.hk/common/images/warning_icons/bsw.gif'
 };
 
 var WARN_CSS = {
-  'TC_SIGNAL_3':'wT3','TC_SIGNAL_8_NE':'wT8','TC_SIGNAL_8_SE':'wT8','TC_SIGNAL_8_NW':'wT8','TC_SIGNAL_8_SW':'wT8','TC_SIGNAL_9':'wT8','TC_SIGNAL_10':'wT10',
-  'RAINSTORM_WARNING_AMBER':'wAMBER','RAINSTORM_WARNING_RED':'wRED','RAINSTORM_WARNING_BLACK':'wBLACK',
-  'COLD_WEATHER_WARNING':'wCOLD','HOT_WEATHER_WARNING':'wHEAT','FROST_WARNING':'wCOLD',
-  'HEAT_STRESS_AMBER':'wAMBER','HEAT_STRESS_RED':'wRED','HEAT_STRESS_BLACK':'wBLACK',
-  'WORK_HEAT_AMBER':'wAMBER','WORK_HEAT_RED':'wRED','WORK_HEAT_BLACK':'wBLACK',
-  'WSTRESS_AMBER':'wAMBER','WSTRESS_RED':'wRED','WSTRESS_BLACK':'wBLACK'
+  'WTS': 'wwT3',
+  'TC1':'wT3', 'TC3':'wT3', 'TC8NE':'wT8', 'TC8SE':'wT8', 'TC8NW':'wT8', 'TC8SW':'wT8', 'TC9':'wT8', 'TC10':'wT10',
+  'AMBER':'wAMBER', 'RED':'wRED', 'BLACK':'wBLACK',
+  'VHOT':'wHEAT', 'COLD':'wCOLD', 'FROST':'wCOLD',
+  'ASW':'wAMBER', 'RSW':'wRED', 'BSW':'wBLACK'
 };
 var ICONS = {50:'☀️',51:'🌤️',52:'🌤️',53:'⛅',54:'🌧️',60:'🌧️',61:'⛈️',62:'⛈️',63:'🌩️',64:'🌩️',65:'🌧️',70:'☁️',71:'☁️',76:'🌫️',80:'🌦️',85:'⛈️',90:'🌡️'};
 
@@ -472,6 +464,9 @@ function fetchWeather() {
     if (tickerWarns.length) {
       document.getElementById('ticker-inner').textContent =
         '⚠️ '+tickerWarns.join('  │  ')+'  │  排隊候車，先落後上 Please queue and let passengers alight first';
+    } else {
+      document.getElementById('ticker-inner').textContent = 
+        '🚌 排隊候車，先落後上 · Please queue · 衙前圍道 Nga Tsin Wai Road';
     }
   });
 }
