@@ -102,11 +102,11 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   display:-webkit-flex; display:flex; 
   -webkit-flex-direction:column; flex-direction:column; 
   -webkit-align-items:center; align-items:center; 
-  gap:12px; width:100%;
+  gap:8px; width:100%;
 }
 #w-icon { 
-  font-size:110px; 
   line-height:1; display:block; text-align:center; 
+  /* 移除舊版 font-size，改由內部 img 控制大小 */
 }
 #weather-temp { 
   font-size:68px; font-weight:900; color:#ffffff; 
@@ -202,7 +202,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
     
     <div id="weather-bar">
       <div id="w-main-info">
-        <span id="w-icon">🌡️</span>
+        <span id="w-icon"></span>
         <span id="weather-temp">--°C</span>
       </div>
       <div id="weather-humidity">💧 --%</div>
@@ -422,10 +422,8 @@ var WARN_CSS = {
   'WFIREY':'wAMBER','WFIRED':'wRED'
 };
 
-var ICONS = {50:'☀️',51:'🌤️',52:'🌤️',53:'⛅',54:'🌧️',60:'🌧️',61:'⛈️',62:'⛈️',63:'🌩️',64:'🌩️',65:'🌧️',70:'☁️',71:'☁️',76:'🌫️',80:'🌦️',85:'⛈️',90:'🌡️'};
-
 function fetchWeather() {
-  // 獲取即時天氣資料 (溫度/濕度/天氣描述)
+  // 獲取即時天氣資料 (溫度/濕度/天氣描述/官方圖示)
   xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc', function(err, obs) {
     if (!err && obs) {
       var temp='--', humid='--';
@@ -437,10 +435,14 @@ function fetchWeather() {
       for(var j=0; j<hArr.length; j++){ if(hArr[j].place==='九龍城'){ humid=hArr[j].value; break; } }
       if(humid==='--' && hArr.length) humid=hArr[0].value;
       
-      var icon = obs.icon && obs.icon[0] ? (ICONS[obs.icon[0]]||'🌡️') : '🌡️';
+      // 獲取官方圖片編號並組合為圖片網址，預設為 62 (微雨)
+      var iconCode = obs.icon && obs.icon[0] ? obs.icon[0] : 62;
+      var iconUrl = 'https://www.hko.gov.hk/images/HKOWxIconOutline/pic' + iconCode + '.png';
+      
       var desc = obs.text ? obs.text.substring(0,60) : '';
       
-      document.getElementById('w-icon').textContent = icon;
+      // 替換為圖片標籤
+      document.getElementById('w-icon').innerHTML = '<img src="' + iconUrl + '" style="width: 140px; height: 140px; object-fit: contain;">';
       document.getElementById('weather-temp').textContent = temp+'°C';
       document.getElementById('weather-desc').textContent = desc;
       document.getElementById('weather-humidity').textContent = '💧 '+humid+'%';
