@@ -6,110 +6,83 @@
 <title>衙前圍道巴士站</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-:root {
-  --gold:#c8a400; --red:#e53935; --orange:#fb8c00; --green:#43a047;
-  --bg:#0d0d0d; --bg2:#161616; --txt:#f0f0f0; --dim:#888;
-}
-html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Arial Black','Arial',sans-serif; overflow:hidden; }
-#app { display:none; flex-direction:column; height:100vh; }
-#app.show { display:flex; }
-
-#header { background:var(--bg2); border-bottom:3px solid var(--gold); display:flex; align-items:center; justify-content:space-between; padding:8px 14px; }
-#stop-zh { font-size:26px; font-weight:900; }
-#stop-en { font-size:12px; color:var(--dim); margin-top:2px; }
-#clock { font-size:52px; font-weight:900; line-height:1; }
-#dateline { font-size:12px; color:var(--dim); text-align:right; }
-
-#main-container { flex:1; display:flex; min-height:0; overflow:hidden; }
-#eta-container { width:540px; display:flex; flex-direction:column; }
-#col-hdr { display:flex; background:var(--gold); color:#000; font-weight:900; font-size:14px; padding:5px 14px; }
-#col-hdr .c1 { width:110px; }
-#col-hdr .c2 { flex:1; }
-#col-hdr .c3 { width:110px; text-align:right; }
-#eta-list { flex:1; display:flex; flex-direction:column; gap:2px; padding:4px 0; overflow:hidden; }
-
-.erow { display:flex; align-items:center; padding:8px 14px; gap:8px; border-left:6px solid #333; }
-.erow:nth-child(odd) { background:#181818; }
-.erow:nth-child(even) { background:#131313; }
-.erow.arriving { border-left-color:var(--red); background:#1c0808; animation:pr 1.4s infinite; }
-@keyframes pr { 0%,100%{background:#1c0808} 50%{background:#2a0d0d} }
-.rnum { font-size:36px; font-weight:900; width:110px; }
-.dzh { font-size:19px; font-weight:700; }
-.etabox { width:110px; text-align:right; }
-.emins { font-size:40px; font-weight:900; }
-
-#weather-bar { background:var(--bg2); border-left:2px solid #282828; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:space-evenly; padding:20px; }
-#w-icon { font-size:120px; line-height:1; }
-#weather-temp { font-size:64px; font-weight:900; }
-#warning-badges { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; width:100%; }
-.warn-icon-img { height:54px; width:auto; animation:blink 1.2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
-
-#ticker { background:var(--gold); color:#000; font-weight:700; font-size:13px; padding:5px 0; overflow:hidden; white-space:nowrap; }
-#ticker-inner { display:inline-block; padding-left:100%; animation:sc 35s linear infinite; }
-@keyframes sc { to { transform:translateX(-100%); } }
+:root { --gold:#c8a400; --bg:#0d0d0d; --bg2:#161616; --txt:#f0f0f0; --dim:#888; }
+body { background:var(--bg); color:var(--txt); font-family:sans-serif; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+#app { display:flex; flex-direction:column; height:100%; }
+#header { background:var(--bg2); border-bottom:3px solid var(--gold); padding:10px 20px; display:flex; justify-content:space-between; align-items:center; }
+#main-container { flex:1; display:flex; min-height:0; }
+#eta-container { width:50%; border-right:1px solid #333; overflow-y:auto; }
+#weather-bar { width:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:15px; }
+#weather-temp { font-size:48px; font-weight:900; }
+#warning-badges { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+.warn-icon-img { height:60px; }
 </style>
 </head>
 <body>
-
-<div id="app" class="show">
+<div id="app">
   <div id="header">
-    <div><div id="stop-zh">衙前圍道</div><div id="stop-en">Nga Tsin Wai Road</div></div>
-    <div><div id="clock">--:--</div><div id="dateline"></div></div>
+    <div><div style="font-size:24px; font-weight:900;">衙前圍道</div><div style="color:var(--dim);">Nga Tsin Wai Road</div></div>
+    <div id="clock" style="font-size:32px; font-weight:900;">--:--</div>
   </div>
-  
   <div id="main-container">
-    <div id="eta-container">
-      <div id="col-hdr"><span class="c1">路線</span><span class="c2">目的地</span><span class="c3">到站</span></div>
-      <div id="eta-list"></div>
-    </div>
-    
+    <div id="eta-container"><div id="eta-list" style="padding:10px;">正在載入巴士資訊...</div></div>
     <div id="weather-bar">
-      <div id="w-icon">🌡️</div>
       <div id="weather-temp">--°C</div>
-      <div id="weather-desc">載入中…</div>
+      <div id="weather-desc">載入中...</div>
       <div id="warning-badges"></div>
     </div>
   </div>
-
-  <div id="ticker"><span id="ticker-inner">🚌 衙前圍道 Nga Tsin Wai Road</span></div>
 </div>
 
 <script>
-// API 設定與邏輯
-function fetchWeather() {
-  // 天氣概況
+// 1. 天文台警告圖標對照表 (確保所有代碼都能找到對應圖片)
+const ICON_MAP = {
+  'WTS': 'https://www.hko.gov.hk/common/images/warning_icons/ts.gif',
+  'WRAIN_A': 'https://www.hko.gov.hk/common/images/warning_icons/rain_amber.gif',
+  'WRAIN_R': 'https://www.hko.gov.hk/common/images/warning_icons/rain_red.gif',
+  'WRAIN_B': 'https://www.hko.gov.hk/common/images/warning_icons/rain_black.gif',
+  'WTC1': 'https://www.hko.gov.hk/common/images/warning_icons/tc1.gif',
+  'WTC3': 'https://www.hko.gov.hk/common/images/warning_icons/tc3.gif',
+  'WTC8NE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8ne.gif',
+  'WTC8SE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8se.gif',
+  'WTC8NW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8nw.gif',
+  'WTC8SW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8sw.gif',
+  'WHOT': 'https://www.hko.gov.hk/common/images/warning_icons/vhot.gif',
+  'WCOLD': 'https://www.hko.gov.hk/common/images/warning_icons/cold.gif'
+};
+
+function updateData() {
+  // 更新時間
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit', minute:'2-digit'});
+
+  // 更新天氣
   fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc')
     .then(r => r.json())
-    .then(obs => {
-      document.getElementById('weather-temp').textContent = (obs.temperature?.data[0]?.value || '--') + '°C';
-      document.getElementById('weather-desc').textContent = obs.text || '';
+    .then(data => {
+      document.getElementById('weather-temp').textContent = (data.temperature?.data[0]?.value || '--') + '°C';
+      document.getElementById('weather-desc').textContent = data.forecastDesc || '';
     });
 
-  // 警告系統 (修正版)
+  // 更新警告 (核心邏輯)
   fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc')
     .then(r => r.json())
     .then(warn => {
-      const badges = document.getElementById('warning-badges');
-      badges.innerHTML = '';
-      
-      // 遍歷所有警告代碼
+      const container = document.getElementById('warning-badges');
+      container.innerHTML = '';
       for (let code in warn) {
-        let wObj = warn[code];
-        // 【核心修正】檢查 actionCode 非 CANCEL
-        if (wObj && wObj.actionCode !== 'CANCEL') {
-          // 這裡補入你的圖標邏輯 (例如檢查 warn[code].warningStatement 等)
+        // 修正後的邏輯：只要不是 CANCEL 就顯示
+        if (warn[code].actionCode !== 'CANCEL' && ICON_MAP[code]) {
           let img = document.createElement('img');
           img.className = 'warn-icon-img';
-          // 根據 code 對應圖片路徑 (建議維持你原有的對照表)
-          img.src = `https://www.hko.gov.hk/common/images/warning_icons/${code.toLowerCase()}.gif`; 
-          badges.appendChild(img);
+          img.src = ICON_MAP[code];
+          container.appendChild(img);
         }
       }
     });
 }
-setInterval(fetchWeather, 60000);
-fetchWeather();
+
+setInterval(updateData, 60000);
+updateData();
 </script>
 </body>
 </html>
