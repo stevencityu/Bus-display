@@ -4,107 +4,63 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>衙前圍道巴士站</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-:root {
-  --gold:#c8a400; --red:#e53935; --orange:#fb8c00; --green:#43a047;
-  --bg:#0d0d0d; --bg2:#161616; --txt:#f0f0f0; --dim:#888;
-}
-html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Helvetica Neue', Arial, sans-serif; overflow:hidden; }
-#app { display:none; -webkit-flex-direction:column; flex-direction:column; height:100vh; }
-#app.show { display:-webkit-flex; display:flex; }
-
-#header { background:var(--bg2); border-bottom:3px solid var(--gold); display:-webkit-flex; display:flex; -webkit-align-items:center; -webkit-justify-content:space-between; padding:10px 14px; }
-#stop-zh { font-size:28px; font-weight:900; }
-#stop-en { font-size:13px; color:var(--dim); }
-#clock { font-size:56px; font-weight:900; color:#fff; }
-
-#main-container { -webkit-flex:1; display:-webkit-flex; overflow:hidden; }
-#eta-container { width:540px; display:-webkit-flex; -webkit-flex-direction:column; }
-
-#col-hdr { background:var(--gold); color:#000; font-weight:900; padding:6px 14px; font-size:15px; display:-webkit-flex; }
-#eta-list { -webkit-flex:1; overflow-y:auto; }
-.erow { display:-webkit-flex; padding:10px 14px; border-bottom:1px solid #222; align-items:center; }
-.rnum { width:110px; font-size:36px; font-weight:900; }
-.dzh { font-size:21px; font-weight:700; }
-.emins { font-size:40px; font-weight:900; width:110px; text-align:right; }
-
-#weather-bar { background:var(--bg2); -webkit-flex:1; padding:20px; display:-webkit-flex; -webkit-flex-direction:column; -webkit-align-items:center; }
-#w-icon { font-size:100px; }
-#weather-temp { font-size:60px; font-weight:900; color:#7eb8f7; }
-#warning-badges { display:-webkit-flex; gap:10px; margin-top:20px; -webkit-flex-wrap:wrap; justify-content:center; }
-.warn-icon-img { height:60px; width:auto; }
-
-#ticker { background:var(--gold); color:#000; font-weight:bold; padding:8px; overflow:hidden; white-space:nowrap; }
-#ticker-inner { display:inline-block; padding-left:100%; -webkit-animation:sc 30s linear infinite; }
-@-webkit-keyframes sc { to { -webkit-transform:translateX(-100%); } }
+/* 簡潔的 CSS，確保在舊設備上流暢運行 */
+body { background:#0d0d0d; color:#fff; font-family:sans-serif; margin:0; }
+#app { padding:20px; }
+.row { display:flex; padding:15px; border-bottom:1px solid #333; align-items:center; }
+.route { width:100px; font-size:30px; font-weight:bold; }
+.eta { flex:1; text-align:right; font-size:30px; color:#c8a400; }
+#status-msg { font-size:12px; color:#666; margin-top:20px; }
 </style>
 </head>
 <body>
-
 <div id="app">
-  <div id="header">
-    <div><div id="stop-zh">衙前圍道</div><div id="stop-en">Nga Tsin Wai Road</div></div>
-    <div id="clock">--:--</div>
-  </div>
-  
-  <div id="main-container">
-    <div id="eta-container">
-      <div id="col-hdr"><span style="width:110px;">路線</span><span style="-webkit-flex:1;">目的地</span><span style="width:110px;text-align:right;">ETA</span></div>
-      <div id="eta-list"></div>
-    </div>
-    <div id="weather-bar">
-      <span id="w-icon">🌡️</span>
-      <span id="weather-temp">--°C</span>
-      <div id="warning-badges"></div>
-    </div>
-  </div>
-  <div id="ticker"><span id="ticker-inner">🚌 歡迎使用衙前圍道巴士資訊站 · 請排隊候車 · Please queue</span></div>
+  <h2 id="clock">--:--</h2>
+  <div id="eta-list">正在連接數據伺服器...</div>
+  <div id="status-msg"></div>
 </div>
 
 <script>
-// 核心配置
-const ROUTES = ['11D','75X','85','85A','1'];
-const HKO_WARN_ICONS = {
-  'WTS': 'https://www.hko.gov.hk/common/images/warning_icons/ts.gif',
-  'AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/rain_amber.gif',
-  'RED': 'https://www.hko.gov.hk/common/images/warning_icons/rain_red.gif',
-  'BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/rain_black.gif',
-  'TC1': 'https://www.hko.gov.hk/common/images/warning_icons/tc1.gif',
-  'TC3': 'https://www.hko.gov.hk/common/images/warning_icons/tc3.gif',
-  'TC8NE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8ne.gif'
-};
-
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clock').textContent = ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2);
+// 1. 強制加入隨機數，防止 iOS 瀏覽器讀取舊的緩存數據
+function getLatest(url) {
+    return url + (url.indexOf('?') === -1 ? '?' : '&') + 't=' + new Date().getTime();
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-// 天氣與警告邏輯
-function fetchWeather() {
-  fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc')
+function updateData() {
+    document.getElementById('status-msg').textContent = "更新中...";
+    
+    // 這裡我們只抓取關鍵的 ETA API
+    fetch(getLatest('https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/002685')) // 假設這是你的站點ID
     .then(r => r.json())
-    .then(warn => {
-      const badges = document.getElementById('warning-badges');
-      badges.innerHTML = '';
-      for (let key in warn) {
-        if (warn[key].actionCode !== 'CANCEL' && HKO_WARN_ICONS[key]) {
-          const img = document.createElement('img');
-          img.className = 'warn-icon-img';
-          img.src = HKO_WARN_ICONS[key];
-          badges.appendChild(img);
-        }
-      }
+    .then(data => {
+        const list = document.getElementById('eta-list');
+        list.innerHTML = ""; // 清空舊資料
+        
+        // 簡單顯示邏輯
+        data.data.slice(0, 5).forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.innerHTML = `<div class="route">${item.route}</div><div class="eta">${item.eta ? Math.round((new Date(item.eta) - new Date())/60000) + ' 分鐘' : '即將抵達'}</div>`;
+            list.appendChild(row);
+        });
+        document.getElementById('status-msg').textContent = "更新完成: " + new Date().toLocaleTimeString();
+    })
+    .catch(e => {
+        document.getElementById('status-msg').textContent = "連接失敗，正在重試...";
+        setTimeout(updateData, 10000); // 失敗後 10 秒重試
     });
 }
-setInterval(fetchWeather, 300000);
-fetchWeather();
 
-document.getElementById('app').className = 'show';
+// 時鐘
+setInterval(() => {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-HK', {hour12:false, hour:'2-digit', minute:'2-digit'});
+}, 1000);
+
+// 初始化
+updateData();
+setInterval(updateData, 60000); // 每分鐘刷新
 </script>
 </body>
 </html>
