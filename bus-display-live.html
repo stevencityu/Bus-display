@@ -37,15 +37,16 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   min-height:0; overflow:hidden;
 }
 
-/* 左側巴士資訊容器 */
+/* 【關鍵修改】固定巴士板總寬度，徹底解決目的地太闊的問題 */
 #eta-container {
-  -webkit-flex:1; flex:1;
+  width: 540px; /* 固定合適寬度，不隨螢幕無限拉長 */
+  -webkit-flex-shrink: 0; flex-shrink: 0;
   display:-webkit-flex; display:flex;
   -webkit-flex-direction:column; flex-direction:column;
   min-height:0;
 }
 
-/* Col headers */
+/* 欄位標頭與內部闊度同步微調 */
 #col-hdr {
   display:-webkit-flex; display:flex;
   background:var(--gold); color:#000; font-weight:900; font-size:14px;
@@ -53,7 +54,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 }
 #col-hdr .c1 { width:110px; }
 #col-hdr .c2 { -webkit-flex:1; flex:1; }
-#col-hdr .c3 { width:90px; text-align:right; }
+#col-hdr .c3 { width:110px; text-align:right; } /* 加寬至 110px 避免時間單位擠壓 */
 
 /* ETA list */
 #eta-list { -webkit-flex:1; flex:1; display:-webkit-flex; display:flex; -webkit-flex-direction:column; flex-direction:column; gap:2px; padding:4px 0; overflow:hidden; }
@@ -78,7 +79,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 .dlabel { font-size:10px; color:var(--dim); }
 .dzh { font-size:19px; font-weight:700; line-height:1.2; }
 .den { font-size:11px; color:#999; }
-.etabox { width:90px; text-align:right; -webkit-flex-shrink:0; flex-shrink:0; }
+.etabox { width:110px; text-align:right; -webkit-flex-shrink:0; flex-shrink:0; } /* 與標頭同步 */
 .emins { font-size:40px; font-weight:900; line-height:1; }
 .eunit { font-size:11px; color:var(--dim); }
 .arriving .emins { color:var(--red); }
@@ -86,39 +87,39 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 .normal   .emins { color:var(--green); }
 .noservice .emins { color:#555; font-size:16px; }
 
-/* ── 【關鍵修改】重塑與放大了的天氣側邊欄 ── */
+/* ── 【關鍵修改】全新配色 + 霸佔右側所有剩餘空間的天氣欄位 ── */
 #weather-bar {
-  background:#0a1628; border-left:2px solid #1e3a5f;
+  background:var(--bg2); border-left:2px solid #282828; /* 與系統相同的質感深灰色，完美融合 */
+  -webkit-flex:1; flex:1; /* 自動吃掉右邊剩下所有空間，極致善用版面 */
   display:-webkit-flex; display:flex; 
   -webkit-flex-direction:column; flex-direction:column;
   -webkit-align-items:center; align-items:center;
-  -webkit-justify-content:space-evenly; justify-content:space-evenly; /* 上下均勻分佈，完美填滿空間 */
-  padding:30px 12px; -webkit-flex-shrink:0; flex-shrink:0;
-  width:220px; /* 稍微加闊，給予大字體足夠空間 */
+  -webkit-justify-content:space-evenly; justify-content:space-evenly; /* 上下均勻分佈 */
+  padding:30px 20px; -webkit-flex-shrink:0; flex-shrink:0;
 }
 
-/* 天氣圖示與溫度區塊 */
+/* 天氣資訊 */
 #w-main-info { 
   display:-webkit-flex; display:flex; 
-  -webkit-flex-direction:column; flex-direction:column; /* 改為上下疊放，更具張力 */
+  -webkit-flex-direction:column; flex-direction:column;
   -webkit-align-items:center; align-items:center; 
-  gap:10px; 
+  gap:8px; 
 }
-#w-icon { font-size:64px; line-height:1; display:block; } /* 天氣圖示大幅放大 */
-#weather-temp { font-size:56px; font-weight:900; color:#7eb8f7; line-height:1; } /* 溫度大幅放大 */
+#w-icon { font-size:72px; line-height:1; display:block; }
+#weather-temp { font-size:64px; font-weight:900; color:#ffffff; line-height:1; } /* 改為純白，消除突兀藍色 */
+#weather-humidity { color:var(--dim); font-size:22px; font-weight:900; letter-spacing:1px; } /* 換上系統一致的灰色 */
+#weather-desc { color:#d5d5d5; font-size:18px; font-weight:700; text-align:center; line-height:1.5; padding:0 12px; } /* 改為淺灰白 */
 
-/* 濕度與描述 */
-#weather-humidity { color:#7eb8f7; font-size:22px; font-weight:900; letter-spacing:1px; } /* 濕度放大 */
-#weather-desc { color:#aac4e8; font-size:18px; font-weight:700; text-align:center; line-height:1.5; padding:0 6px; } /* 描述放大 */
-
-/* 天氣警告圖標直立容器 */
+/* 天氣警告圖標容器：因為右邊空間變寬了，改為橫向置中包裹排列，畫面更具平衡感 */
 #warning-badges { 
   display:-webkit-flex; display:flex; 
-  -webkit-flex-direction:column; flex-direction:column; 
+  -webkit-flex-direction:row; flex-direction:row; 
+  -webkit-flex-wrap:wrap; flex-wrap:wrap;
+  -webkit-justify-content:center; justify-content:center;
   gap:12px; width:100%; -webkit-align-items:center; align-items:center; 
 }
 .warn-icon-img {
-  height:54px; width:auto; display:block; /* 天文台警告圖標大幅放大 */
+  height:54px; width:auto; display:block;
   -webkit-animation:blink 1.2s infinite; animation:blink 1.2s infinite;
 }
 .warn-badge {
@@ -183,6 +184,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   </div>
   
   <div id="main-container">
+    <!-- 左側巴士資訊固定寬度 -->
     <div id="eta-container">
       <div id="col-hdr">
         <span class="c1">路線 Route</span>
@@ -192,6 +194,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
       <div id="eta-list"></div>
     </div>
     
+    <!-- 右側延伸整合天氣欄 -->
     <div id="weather-bar">
       <div id="w-main-info">
         <span id="w-icon">🌡️</span>
