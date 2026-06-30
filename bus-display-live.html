@@ -12,21 +12,51 @@
   --gold:#c8a400; --red:#e53935; --orange:#fb8c00; --green:#43a047;
   --bg:#0d0d0d; --bg2:#161616; --txt:#f0f0f0; --dim:#888;
 }
-html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Arial Black','Arial',sans-serif; overflow:hidden; }
-#app { display:none; -webkit-flex-direction:column; flex-direction:column; height:100vh; }
+html,body { height:100%; background:#000; color:var(--txt); font-family:'Arial Black','Arial',sans-serif; overflow:hidden; }
+
+/* 保持收窄置中 */
+#app { 
+  display:none; 
+  -webkit-flex-direction:column; 
+  flex-direction:column; 
+  height:100vh; 
+  max-width: 960px;      
+  margin: 0 auto;        
+  background: var(--bg);
+  border-left: 1px solid #222;  
+  border-right: 1px solid #222;
+}
 #app.show { display:-webkit-flex; display:flex; }
 
-/* Weather */
+/* 天氣列保持靠右 */
 #weather-bar {
   background:#0a1628; border-bottom:2px solid #1e3a5f;
-  display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center;
+  display:-webkit-flex; display:flex; 
+  -webkit-align-items:center; align-items:center;
+  -webkit-justify-content:flex-end; justify-content:flex-end; 
   gap:10px; padding:6px 14px; -webkit-flex-shrink:0; flex-shrink:0;
   font-size:13px; -webkit-flex-wrap:wrap; flex-wrap:wrap;
 }
 #weather-temp { font-size:24px; font-weight:900; color:#7eb8f7; }
-#weather-desc { color:#aac4e8; -webkit-flex:1; flex:1; font-size:12px; }
+#weather-desc { color:#aac4e8; font-size:12px; }
 #weather-humidity { color:#7eb8f7; font-size:12px; }
-#warning-badges { display:-webkit-flex; display:flex; gap:6px; -webkit-flex-wrap:wrap; flex-wrap:wrap; }
+
+/* 天氣警告圖標容器 */
+#warning-badges { 
+  display:-webkit-flex; display:flex; 
+  gap:6px; 
+  -webkit-align-items:center; align-items:center; 
+}
+
+/* 【關鍵修改】設定天文台圖標的樣式與閃爍效果 */
+.warn-icon-img {
+  height: 26px; /* 配合天氣列高度 */
+  width: auto;
+  display: block;
+  -webkit-animation:blink 1.2s infinite; animation:blink 1.2s infinite;
+}
+
+/* 舊版純文字 Badge 留作備用 fallback */
 .warn-badge {
   padding:3px 8px; border-radius:3px; font-weight:900; font-size:12px;
   -webkit-animation:blink 1.2s infinite; animation:blink 1.2s infinite;
@@ -39,6 +69,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 .wAMBER { background:#e65c00; color:#fff; }
 .wCOLD  { background:#1a6ee6; color:#fff; }
 .wHEAT  { background:#c62828; color:#fff; }
+
 @-webkit-keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
 
@@ -314,19 +345,37 @@ function renderETA() {
   }
 }
 
-// ── Weather ──
+// ── Weather Data Mapping ──
 var WARN_LABEL = {
-  'TC_SIGNAL_3':'🌀 三號風球','TC_SIGNAL_8_NE':'🌀 八號東北','TC_SIGNAL_8_SE':'🌀 八號東南',
-  'TC_SIGNAL_8_NW':'🌀 八號西北','TC_SIGNAL_8_SW':'🌀 八號西南',
-  'TC_SIGNAL_9':'🌀 九號風球','TC_SIGNAL_10':'🌀 十號颶風',
-  'RAINSTORM_WARNING_AMBER':'🟡 黃色暴雨','RAINSTORM_WARNING_RED':'🔴 紅色暴雨',
-  'RAINSTORM_WARNING_BLACK':'⚫ 黑色暴雨',
-  'COLD_WEATHER_WARNING':'🔵 寒冷天氣','HOT_WEATHER_WARNING':'🔴 酷熱天氣',
-  'FROST_WARNING':'❄️ 霜凍'
+  'TC_SIGNAL_1':'🌀 一號戒備','TC_SIGNAL_3':'🌀 三號風球','TC_SIGNAL_8_NE':'🌀 八號東北','TC_SIGNAL_8_SE':'🌀 八號東南',
+  'TC_SIGNAL_8_NW':'🌀 八號西北','TC_SIGNAL_8_SW':'🌀 八號西南','TC_SIGNAL_9':'🌀 九號風球','TC_SIGNAL_10':'🌀 十號颶風',
+  'RAINSTORM_WARNING_AMBER':'🟡 黃色暴雨','RAINSTORM_WARNING_RED':'🔴 紅色暴雨','RAINSTORM_WARNING_BLACK':'⚫ 黑色暴雨',
+  'COLD_WEATHER_WARNING':'🔵 寒冷天氣','HOT_WEATHER_WARNING':'🔴 酷熱天氣','FROST_WARNING':'❄️ 霜凍',
+  'THUNDERSTORM_WARNING':'⚡ 雷暴警告','STRONG_MONSOON_SIGNAL':'🍃 強烈季候風'
 };
+
+/* 【新增】香港天文台官方網站的警告圖標 URL 對照表 */
+var WARN_ICON = {
+  'TC_SIGNAL_1': 'https://www.hko.gov.hk/common/images/warning_icons/tc1.gif',
+  'TC_SIGNAL_3': 'https://www.hko.gov.hk/common/images/warning_icons/tc3.gif',
+  'TC_SIGNAL_8_NE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8ne.gif',
+  'TC_SIGNAL_8_SE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8se.gif',
+  'TC_SIGNAL_8_NW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8nw.gif',
+  'TC_SIGNAL_8_SW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8sw.gif',
+  'TC_SIGNAL_9': 'https://www.hko.gov.hk/common/images/warning_icons/tc9.gif',
+  'TC_SIGNAL_10': 'https://www.hko.gov.hk/common/images/warning_icons/tc10.gif',
+  'RAINSTORM_WARNING_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/rain_amber.gif',
+  'RAINSTORM_WARNING_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rain_red.gif',
+  'RAINSTORM_WARNING_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/rain_black.gif',
+  'COLD_WEATHER_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/cold.gif',
+  'HOT_WEATHER_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/vhot.gif',
+  'FROST_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/frost.gif',
+  'THUNDERSTORM_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/ts.gif',
+  'STRONG_MONSOON_SIGNAL': 'https://www.hko.gov.hk/common/images/warning_icons/sms.gif'
+};
+
 var WARN_CSS = {
-  'TC_SIGNAL_3':'wT3','TC_SIGNAL_8_NE':'wT8','TC_SIGNAL_8_SE':'wT8',
-  'TC_SIGNAL_8_NW':'wT8','TC_SIGNAL_8_SW':'wT8','TC_SIGNAL_9':'wT8','TC_SIGNAL_10':'wT10',
+  'TC_SIGNAL_3':'wT3','TC_SIGNAL_8_NE':'wT8','TC_SIGNAL_8_SE':'wT8','TC_SIGNAL_8_NW':'wT8','TC_SIGNAL_8_SW':'wT8','TC_SIGNAL_9':'wT8','TC_SIGNAL_10':'wT10',
   'RAINSTORM_WARNING_AMBER':'wAMBER','RAINSTORM_WARNING_RED':'wRED','RAINSTORM_WARNING_BLACK':'wBLACK',
   'COLD_WEATHER_WARNING':'wCOLD','HOT_WEATHER_WARNING':'wHEAT','FROST_WARNING':'wCOLD'
 };
@@ -350,25 +399,39 @@ function fetchWeather() {
       document.getElementById('weather-humidity').textContent = '💧'+humid+'%';
     }
   });
+  
   xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc', function(err, warn) {
     if (err || !warn) return;
     var badges = document.getElementById('warning-badges');
     badges.innerHTML = '';
     var tickerWarns = [];
+    
     for (var code in warn) {
       if (warn[code] && warn[code].inForce) {
         var label = WARN_LABEL[code] || code;
-        var css   = WARN_CSS[code]  || 'wT3';
-        var b = document.createElement('span');
-        b.className = 'warn-badge '+css;
-        b.textContent = label;
-        badges.appendChild(b);
+        var iconUrl = WARN_ICON[code];
+        
+        /* 【關鍵修改】如果有對應的天文台圖標，就直接生成 <img> 顯示官方標示 */
+        if (iconUrl) {
+          var img = document.createElement('img');
+          img.className = 'warn-icon-img';
+          img.src = iconUrl;
+          img.alt = label;
+          badges.appendChild(img);
+        } else {
+          // Fallback 備用方案：萬一沒有對應圖片，才顯示之前的文字 Badge
+          var css = WARN_CSS[code] || 'wT3';
+          var b = document.createElement('span');
+          b.className = 'warn-badge ' + css;
+          b.textContent = label;
+          badges.appendChild(b);
+        }
         tickerWarns.push(label);
       }
     }
     if (tickerWarns.length) {
       document.getElementById('ticker-inner').textContent =
-        '⚠️ '+tickerWarns.join('  │  ')+'  │  排隊候車，先落後上 Please queue and let passengers alight first';
+        '⚠️ ' + tickerWarns.join('  │  ') + '  │  排隊候車，先落後上 Please queue and let passengers alight first';
     }
   });
 }
