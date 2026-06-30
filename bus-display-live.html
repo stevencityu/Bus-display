@@ -29,7 +29,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 #clock { font-size:52px; font-weight:900; letter-spacing:2px; line-height:1; }
 #dateline { font-size:12px; color:var(--dim); text-align:right; margin-top:2px; }
 
-/* 主體左右分欄容器 */
+/* 主體左右分欄 */
 #main-container {
   -webkit-flex:1; flex:1;
   display:-webkit-flex; display:flex;
@@ -37,7 +37,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   min-height:0; overflow:hidden;
 }
 
-/* 固定巴士板總寬度，收窄多餘空間 */
+/* 固定巴士板總寬度 */
 #eta-container {
   width: 540px;
   -webkit-flex-shrink: 0; flex-shrink: 0;
@@ -56,7 +56,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 #col-hdr .c2 { -webkit-flex:1; flex:1; }
 #col-hdr .c3 { width:110px; text-align:right; }
 
-/* ETA list */
+/* ETA 列表 */
 #eta-list { -webkit-flex:1; flex:1; display:-webkit-flex; display:flex; -webkit-flex-direction:column; flex-direction:column; gap:2px; padding:4px 0; overflow:hidden; }
 
 .erow {
@@ -125,7 +125,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   gap:12px; width:100%; -webkit-align-items:center; align-items:center; 
 }
 .warn-icon-img {
-  height:54px; width:auto; display:block;
+  height:56px; width:auto; display:block;
   -webkit-animation:blink 1.2s infinite; animation:blink 1.2s infinite;
 }
 .warn-badge {
@@ -243,7 +243,7 @@ function updateClock() {
 setInterval(updateClock, 5000);
 updateClock();
 
-// ── XMLHttpRequest wrapper ──
+// ── XMLHttpRequest ──
 function xhrGet(url, cb) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url, true);
@@ -369,7 +369,7 @@ function renderETA() {
   }
 }
 
-// ── 修正：香港天文台官方 API 警告代碼對照表 ──
+// ── 天文台官方 API 警告代碼對照表 ──
 var WARN_LABEL = {
   'WTS': '⚡ 雷暴警告',
   'TC1': '🌀 一號戒備', 'TC3': '🌀 三號風球', 'TC8NE': '🌀 八號東北', 'TC8SE': '🌀 八號東南',
@@ -408,7 +408,7 @@ var WARN_ICON = {
 };
 
 var WARN_CSS = {
-  'WTS': 'wwT3',
+  'WTS': 'wT8',
   'TC1':'wT3', 'TC3':'wT3', 'TC8NE':'wT8', 'TC8SE':'wT8', 'TC8NW':'wT8', 'TC8SW':'wT8', 'TC9':'wT8', 'TC10':'wT10',
   'AMBER':'wAMBER', 'RED':'wRED', 'BLACK':'wBLACK',
   'VHOT':'wHEAT', 'COLD':'wCOLD', 'FROST':'wCOLD',
@@ -435,13 +435,17 @@ function fetchWeather() {
     }
   });
   
+  // ── 修正後的警告邏輯 ──
   xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc', function(err, warn) {
     if (err || !warn) return;
     var badges = document.getElementById('warning-badges');
     badges.innerHTML = '';
     var tickerWarns = [];
+    
     for (var code in warn) {
-      if (warn[code] && warn[code].inForce) {
+      var wObj = warn[code];
+      // 關鍵修正：天文台沒有 .inForce 屬性。只要 actionCode 不是 CANCEL，就代表警告正在生效！
+      if (wObj && wObj.actionCode !== 'CANCEL') {
         var label = WARN_LABEL[code] || code;
         var iconUrl = WARN_ICON[code];
         
@@ -461,9 +465,10 @@ function fetchWeather() {
         tickerWarns.push(label);
       }
     }
+    
     if (tickerWarns.length) {
       document.getElementById('ticker-inner').textContent =
-        '⚠️ '+tickerWarns.join('  │  ')+'  │  排隊候車，先落後上 Please queue and let passengers alight first';
+        '⚠️ 本港正生效：' + tickerWarns.join('  │  ') + '  │  請乘客留意天氣變化，排隊候車，先落後上。';
     } else {
       document.getElementById('ticker-inner').textContent = 
         '🚌 排隊候車，先落後上 · Please queue · 衙前圍道 Nga Tsin Wai Road';
