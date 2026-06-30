@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>衙前圍道巴士站</title>
+<title>衙前圍道巴士站 - 電子資訊牌</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
   --gold:#c8a400; --red:#e53935; --orange:#fb8c00; --green:#43a047;
   --bg:#0d0d0d; --bg2:#161616; --txt:#f0f0f0; --dim:#888;
 }
-html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Arial Black','Arial',sans-serif; overflow:hidden; }
+html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Arial Black','Arial','Microsoft JhengHei',sans-serif; overflow:hidden; }
 #app { display:none; -webkit-flex-direction:column; flex-direction:column; height:100vh; }
 #app.show { display:-webkit-flex; display:flex; }
 
@@ -22,12 +22,12 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   display:-webkit-flex; display:flex;
   -webkit-align-items:center; align-items:center;
   -webkit-justify-content:space-between; justify-content:space-between;
-  padding:8px 14px; -webkit-flex-shrink:0; flex-shrink:0;
+  padding:12px 18px; -webkit-flex-shrink:0; flex-shrink:0;
 }
-#stop-zh { font-size:26px; font-weight:900; }
-#stop-en { font-size:12px; color:var(--dim); margin-top:2px; }
-#clock { font-size:52px; font-weight:900; letter-spacing:2px; line-height:1; }
-#dateline { font-size:12px; color:var(--dim); text-align:right; margin-top:2px; }
+#stop-zh { font-size:28px; font-weight:900; letter-spacing:1px; }
+#stop-en { font-size:13px; color:var(--dim); margin-top:2px; }
+#clock { font-size:54px; font-weight:900; letter-spacing:2px; line-height:1; font-family: monospace; }
+#dateline { font-size:12px; color:var(--dim); text-align:right; margin-top:4px; }
 
 /* 主體左右分欄容器 */
 #main-container {
@@ -39,7 +39,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 
 /* 固定巴士板總寬度 */
 #eta-container {
-  width: 540px;
+  width: 560px;
   -webkit-flex-shrink: 0; flex-shrink: 0;
   display:-webkit-flex; display:flex;
   -webkit-flex-direction:column; flex-direction:column;
@@ -50,14 +50,14 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 #col-hdr {
   display:-webkit-flex; display:flex;
   background:var(--gold); color:#000; font-weight:900; font-size:14px;
-  padding:5px 14px; -webkit-flex-shrink:0; flex-shrink:0;
+  padding:6px 14px; -webkit-flex-shrink:0; flex-shrink:0;
 }
 #col-hdr .c1 { width:110px; }
 #col-hdr .c2 { -webkit-flex:1; flex:1; }
-#col-hdr .c3 { width:110px; text-align:right; }
+#col-hdr .c3 { width:120px; text-align:right; }
 
 /* ETA list */
-#eta-list { -webkit-flex:1; flex:1; display:-webkit-flex; display:flex; -webkit-flex-direction:column; flex-direction:column; gap:2px; padding:4px 0; overflow:hidden; }
+#eta-list { -webkit-flex:1; flex:1; display:-webkit-flex; display:flex; -webkit-flex-direction:column; flex-direction:column; gap:2px; padding:2px 0; overflow:hidden; }
 
 .erow {
   display:-webkit-flex; display:flex;
@@ -66,30 +66,30 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   border-left:6px solid #333;
   -webkit-flex:1; flex:1; min-height:0;
 }
-.erow:nth-child(odd)  { background:#181818; }
-.erow:nth-child(even) { background:#131313; }
+.erow:nth-child(odd)  { background:#161616; }
+.erow:nth-child(even) { background:#111111; }
 .erow.arriving { border-left-color:var(--red); background:#1c0808; -webkit-animation:pr 1.4s infinite; animation:pr 1.4s infinite; }
 .erow.soon     { border-left-color:var(--orange); background:#1a1000; }
 .erow.normal   { border-left-color:var(--green); }
-@-webkit-keyframes pr { 0%,100%{background:#1c0808} 50%{background:#2a0d0d} }
-@keyframes pr { 0%,100%{background:#1c0808} 50%{background:#2a0d0d} }
+@-webkit-keyframes pr { 0%,100%{background:#1c0808} 50%{background:#2d0f0f} }
+@keyframes pr { 0%,100%{background:#1c0808} 50%{background:#2d0f0f} }
 
-.rnum { font-size:36px; font-weight:900; line-height:1; width:110px; -webkit-flex-shrink:0; flex-shrink:0; }
-.dblock { -webkit-flex:1; flex:1; }
-.dlabel { font-size:10px; color:var(--dim); }
-.dzh { font-size:19px; font-weight:700; line-height:1.2; }
-.den { font-size:11px; color:#999; }
-.etabox { width:110px; text-align:right; -webkit-flex-shrink:0; flex-shrink:0; }
-.emins { font-size:40px; font-weight:900; line-height:1; }
-.eunit { font-size:11px; color:var(--dim); }
+.rnum { font-size:38px; font-weight:900; line-height:1; width:110px; -webkit-flex-shrink:0; flex-shrink:0; color:#fff; }
+.dblock { -webkit-flex:1; flex:1; min-width:0; }
+.dlabel { font-size:10px; color:var(--dim); text-transform:uppercase; }
+.dzh { font-size:22px; font-weight:700; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.den { font-size:12px; color:#aaa; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.etabox { width:120px; text-align:right; -webkit-flex-shrink:0; flex-shrink:0; }
+.emins { font-size:42px; font-weight:900; line-height:1; font-family:sans-serif; }
+.eunit { font-size:11px; color:var(--dim); margin-top:2px; }
 .arriving .emins { color:var(--red); }
 .soon     .emins { color:var(--orange); }
 .normal   .emins { color:var(--green); }
-.noservice .emins { color:#555; font-size:16px; }
+.noservice .emins { color:#555; font-size:20px; }
 
 /* ── 右側天氣欄位 ── */
 #weather-bar {
-  background:var(--bg2); border-left:2px solid #282828;
+  background:var(--bg2); border-left:2px solid #222;
   -webkit-flex:1; flex:1;
   display:-webkit-flex; display:flex; 
   -webkit-flex-direction:column; flex-direction:column;
@@ -98,25 +98,24 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   padding:20px 15px; -webkit-flex-shrink:0; flex-shrink:0;
 }
 
-/* 【關鍵修改】確保天氣圖示與溫度垂直分行，並且大幅巨型化 */
 #w-main-info { 
   display:-webkit-flex; display:flex; 
-  -webkit-flex-direction:column; flex-direction:column; /* 強制上下分層 */
+  -webkit-flex-direction:column; flex-direction:column; 
   -webkit-align-items:center; align-items:center; 
   gap:12px; width:100%;
 }
 #w-icon { 
-  font-size:120px; /* 從72px極限放大至120px，視覺焦點 */
+  font-size:110px; 
   line-height:1; display:block; text-align:center; 
 }
 #weather-temp { 
-  font-size:64px; font-weight:900; color:#ffffff; 
-  line-height:1; display:block; text-align:center;
+  font-size:68px; font-weight:900; color:#ffffff; 
+  line-height:1; display:block; text-align:center; font-family:sans-serif;
 }
 
 /* 濕度與描述 */
-#weather-humidity { color:var(--dim); font-size:22px; font-weight:900; letter-spacing:1px; }
-#weather-desc { color:#d5d5d5; font-size:18px; font-weight:700; text-align:center; line-height:1.5; padding:0 12px; }
+#weather-humidity { color:#4dadf7; font-size:24px; font-weight:900; letter-spacing:1px; }
+#weather-desc { color:#e0e0e0; font-size:18px; font-weight:700; text-align:center; line-height:1.6; padding:0 10px; max-height:110px; overflow:hidden; }
 
 /* 天氣警告圖標容器 */
 #warning-badges { 
@@ -124,14 +123,14 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
   -webkit-flex-direction:row; flex-direction:row; 
   -webkit-flex-wrap:wrap; flex-wrap:wrap;
   -webkit-justify-content:center; justify-content:center;
-  gap:12px; width:100%; -webkit-align-items:center; align-items:center; 
+  gap:10px; width:100%; -webkit-align-items:center; align-items:center; 
 }
 .warn-icon-img {
-  height:54px; width:auto; display:block;
+  height:50px; width:auto; display:block;
   -webkit-animation:blink 1.2s infinite; animation:blink 1.2s infinite;
 }
 .warn-badge {
-  padding:6px 12px; border-radius:4px; font-weight:900; font-size:16px;
+  padding:6px 12px; border-radius:4px; font-weight:900; font-size:15px;
   -webkit-animation:blink 1.2s infinite; animation:blink 1.2s infinite;
 }
 .wT3  { background:#ffcc00; color:#000; }
@@ -142,13 +141,13 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 .wAMBER { background:#e65c00; color:#fff; }
 .wCOLD  { background:#1a6ee6; color:#fff; }
 .wHEAT  { background:#c62828; color:#fff; }
-@-webkit-keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
+@-webkit-keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
 
 /* Status */
 #statusbar {
-  background:#0d0d0d; border-top:1px solid #222;
-  font-size:10px; color:#555; padding:3px 14px;
+  background:#080808; border-top:1px solid #222;
+  font-size:11px; color:#666; padding:4px 14px;
   display:-webkit-flex; display:flex;
   -webkit-justify-content:space-between; justify-content:space-between;
   -webkit-flex-shrink:0; flex-shrink:0;
@@ -156,18 +155,18 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 
 /* Ticker */
 #ticker {
-  background:var(--gold); color:#000; font-weight:700; font-size:13px;
-  padding:5px 0; overflow:hidden; white-space:nowrap;
+  background:var(--gold); color:#000; font-weight:900; font-size:14px;
+  padding:6px 0; overflow:hidden; white-space:nowrap;
   -webkit-flex-shrink:0; flex-shrink:0;
 }
-#ticker-inner { display:inline-block; padding-left:100%; -webkit-animation:sc 35s linear infinite; animation:sc 35s linear infinite; }
+#ticker-inner { display:inline-block; padding-left:100%; -webkit-animation:sc 30s linear infinite; animation:sc 30s linear infinite; }
 @-webkit-keyframes sc { to { -webkit-transform:translateX(-100%); transform:translateX(-100%); } }
 @keyframes sc { to { -webkit-transform:translateX(-100%); transform:translateX(-100%); } }
 
 /* Loading */
-#loading { position:fixed; inset:0; top:0; left:0; right:0; bottom:0; background:#0d0d0d; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; z-index:99; -webkit-flex-direction:column; flex-direction:column; gap:12px; }
-#loading-txt { color:#888; font-size:16px; }
-.spin { width:36px; height:36px; border:4px solid #333; border-top-color:var(--gold); border-radius:50%; -webkit-animation:sp .8s linear infinite; animation:sp .8s linear infinite; }
+#loading { position:fixed; inset:0; top:0; left:0; right:0; bottom:0; background:#0d0d0d; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; z-index:99; -webkit-flex-direction:column; flex-direction:column; gap:16px; }
+#loading-txt { color:#aaa; font-size:16px; font-weight:700; }
+.spin { width:40px; height:40px; border:4px solid #222; border-top-color:var(--gold); border-radius:50%; -webkit-animation:sp .8s linear infinite; animation:sp .8s linear infinite; }
 @-webkit-keyframes sp { to { -webkit-transform:rotate(360deg); transform:rotate(360deg); } }
 @keyframes sp { to { -webkit-transform:rotate(360deg); transform:rotate(360deg); } }
 </style>
@@ -176,7 +175,7 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
 
 <div id="loading">
   <div class="spin"></div>
-  <div id="loading-txt">正在載入…</div>
+  <div id="loading-txt">正在初始化系統…</div>
 </div>
 
 <div id="app">
@@ -206,20 +205,21 @@ html,body { height:100%; background:var(--bg); color:var(--txt); font-family:'Ar
         <span id="w-icon">🌡️</span>
         <span id="weather-temp">--°C</span>
       </div>
-      <div id="weather-humidity"></div>
-      <div id="weather-desc">載入中…</div>
+      <div id="weather-humidity">💧 --%</div>
+      <div id="weather-desc">正在獲取天氣資訊…</div>
       <div id="warning-badges"></div>
     </div>
   </div>
 
   <div id="statusbar">
     <span id="last-update">尚未更新</span>
-    <span>每分鐘自動更新 · KMB + 天文台</span>
+    <span>系統自動維護 · KMB + HKO DATA</span>
   </div>
-  <div id="ticker"><span id="ticker-inner">🚌 排隊候車，先落後上 · Please queue · 衙前圍道 Nga Tsin Wai Road</span></div>
+  <div id="ticker"><span id="ticker-inner">🚌 乘車時請緊握扶手 · 禮讓座位予有需要人士 · 衙前圍道 Nga Tsin Wai Road</span></div>
 </div>
 
 <script>
+// 定義你需要的固定路線
 var ROUTES = [
   { route:'11D', destZh:'樂富',       destEn:'Lok Fu'            },
   { route:'75X', destZh:'大埔(富善)', destEn:'Tai Po (Fu Shin)'  },
@@ -228,9 +228,9 @@ var ROUTES = [
   { route:'1',   destZh:'尖沙咀',     destEn:'Tsim Sha Tsui'     }
 ];
 
-var stopIds = [];
+// 直接鎖定「賈炳達道公園/啟德道」一側，位於衙前圍道的特定九巴站點 ID 組合
+var stopIds = ["3529BA34A1BE33A7", "7209935E8E899496", "9976378A5BCEAF0B"]; 
 var etaData = {};
-var initDone = false;
 
 // ── Clock ──
 function updateClock() {
@@ -265,20 +265,29 @@ function xhrGet(url, cb) {
   xhr.send();
 }
 
-// ── Find Stop IDs ──
-function findStops(done) {
-  document.getElementById('loading-txt').textContent = '搜尋巴士站…';
+// ── 自動比對並動態補全該站其餘正確 Stop ID ──
+function initStopIds(done) {
+  document.getElementById('loading-txt').textContent = '正在定位巴士站點…';
   xhrGet('https://data.etabus.gov.hk/v1/transport/kmb/stop', function(err, json) {
-    if (err) { done(); return; }
-    var found = [];
-    var data = json.data || [];
-    for (var i=0; i<data.length; i++) {
-      var s = data[i];
-      if (s.name_en && s.name_en.toUpperCase().indexOf('NGA TSIN WAI') !== -1) {
-        found.push(s.stop);
+    if (!err && json && json.data) {
+      var found = [];
+      var data = json.data || [];
+      for (var i=0; i<data.length; i++) {
+        var s = data[i];
+        if (s.name_tc && s.name_tc.indexOf('衙前圍道') !== -1) {
+          var lat = parseFloat(s.lat);
+          var lng = parseFloat(s.long);
+          if (lat > 22.328 && lat < 22.331 && lng > 114.186 && lng < 114.192) {
+            if (found.indexOf(s.stop) === -1) {
+              found.push(s.stop);
+            }
+          }
+        }
+      }
+      if (found.length > 0) {
+        stopIds = found;
       }
     }
-    stopIds = found;
     done();
   });
 }
@@ -299,7 +308,7 @@ function fetchETA(done) {
         arr.sort(function(a,b){return a-b;});
         var uniq = [];
         for (var j=0; j<arr.length; j++) {
-          if (uniq.indexOf(arr[j]) === -1) uniq.push(arr[j]);
+          if (uniq.indexOf(arr[j]) === -1 && arr[j] >= -1) uniq.push(arr[j]);
         }
         newEta[r] = uniq.slice(0,3);
       }
@@ -307,7 +316,7 @@ function fetchETA(done) {
       renderETA();
       var ts = new Date();
       var hh=('0'+ts.getHours()).slice(-2), mm=('0'+ts.getMinutes()).slice(-2), ss=('0'+ts.getSeconds()).slice(-2);
-      document.getElementById('last-update').textContent = '上次更新：'+hh+':'+mm+':'+ss;
+      document.getElementById('last-update').textContent = '最後更新：'+hh+':'+mm+':'+ss;
       if (done) done();
     }
   }
@@ -324,7 +333,7 @@ function fetchETA(done) {
             }
             if (!wanted || !item.eta) continue;
             var diffMs = new Date(item.eta) - now;
-            var mins = Math.round(diffMs / 60000);
+            var mins = Math.floor(diffMs / 60000); 
             if (mins >= -1 && mins <= 90) newEta[item.route].push(mins);
           }
         }
@@ -334,7 +343,7 @@ function fetchETA(done) {
   }
 }
 
-// ── Render ──
+// ── Render ETA ──
 function renderETA() {
   var list = document.getElementById('eta-list');
   list.innerHTML = '';
@@ -350,9 +359,13 @@ function renderETA() {
     }
     var minsDisplay = first === null ? '–' : (first <= 0 ? '▶' : first);
     var unitDisplay = first === null ? '暫無班次' : (first <= 0 ? '即將抵達' : '分鐘');
+    
     var nextArr = mins.slice(1);
     var nextHint = '';
-    for (var j=0; j<nextArr.length; j++) nextHint += (j?'/':'')+nextArr[j]+'分';
+    for (var j=0; j<nextArr.length; j++) {
+      var mVal = nextArr[j];
+      nextHint += (j?' / ':'') + (mVal <= 0 ? '即將抵達' : mVal+'分');
+    }
 
     var row = document.createElement('div');
     row.className = 'erow '+cls;
@@ -361,7 +374,7 @@ function renderETA() {
       '<div class="dblock">'+
         '<div class="dlabel">往 To</div>'+
         '<div class="dzh">'+cfg.destZh+'</div>'+
-        '<div class="den">'+cfg.destEn+(nextHint?' <span style="color:#666;font-size:.85em">'+nextHint+'</span>':'')+'</div>'+
+        '<div class="den">'+cfg.destEn+(nextHint?' <span style="color:#888;font-size:0.9em;margin-left:5px;">('+nextHint+')</span>':'')+'</div>'+
       '</div>'+
       '<div class="etabox">'+
         '<div class="emins">'+minsDisplay+'</div>'+
@@ -371,71 +384,62 @@ function renderETA() {
   }
 }
 
-// ── Weather Data Mapping ──
-/* 【關鍵修改】補全所有可能出現的勞工處「工作暑熱警告」代碼對應 */
+// ── 天氣對應配置 (已更新為香港天文台 API 官方代碼) ──
 var WARN_LABEL = {
-  'TC_SIGNAL_1':'🌀 一號戒備','TC_SIGNAL_3':'🌀 三號風球','TC_SIGNAL_8_NE':'🌀 八號東北','TC_SIGNAL_8_SE':'🌀 八號東南',
-  'TC_SIGNAL_8_NW':'🌀 八號西北','TC_SIGNAL_8_SW':'🌀 八號西南','TC_SIGNAL_9':'🌀 九號風球','TC_SIGNAL_10':'🌀 十號颶風',
-  'RAINSTORM_WARNING_AMBER':'🟡 黃色暴雨','RAINSTORM_WARNING_RED':'🔴 紅色暴雨','RAINSTORM_WARNING_BLACK':'⚫ 黑色暴雨',
-  'COLD_WEATHER_WARNING':'🔵 寒冷天氣','HOT_WEATHER_WARNING':'🔴 酷熱天氣','FROST_WARNING':'❄️ 霜凍',
-  'THUNDERSTORM_WARNING':'⚡ 雷暴警告','STRONG_MONSOON_SIGNAL':'🍃 強烈季候風',
-  // 工作暑熱警告多種 API 變體格式預備
-  'HEAT_STRESS_AMBER':'🟡 工作暑熱(黃)','HEAT_STRESS_RED':'🔴 工作暑熱(紅)','HEAT_STRESS_BLACK':'⚫ 工作暑熱(黑)',
-  'WORK_HEAT_AMBER':'🟡 工作暑熱(黃)','WORK_HEAT_RED':'🔴 工作暑熱(紅)','WORK_HEAT_BLACK':'⚫ 工作暑熱(黑)',
-  'WSTRESS_AMBER':'🟡 工作暑熱(黃)','WSTRESS_RED':'🔴 工作暑熱(紅)','WSTRESS_BLACK':'⚫ 工作暑熱(黑)'
+  'TC1':'一號戒備','TC3':'三號風球','TC8NE':'八號東北','TC8SE':'八號東南',
+  'TC8NW':'八號西北','TC8SW':'八號西南','TC9':'九號風球','TC10':'十號颶風',
+  'WRAINA':'黃色暴雨','WRAINR':'紅色暴雨','WRAINB':'黑色暴雨',
+  'WCOLD':'寒冷天氣','WHOT':'酷熱天氣','WFROST':'霜凍',
+  'WTS':'雷暴警告','WMSGNL':'強烈季候風',
+  'WFIREY':'黃色火災危險','WFIRED':'紅色火災危險'
 };
 
 var WARN_ICON = {
-  'TC_SIGNAL_1': 'https://www.hko.gov.hk/common/images/warning_icons/tc1.gif',
-  'TC_SIGNAL_3': 'https://www.hko.gov.hk/common/images/warning_icons/tc3.gif',
-  'TC_SIGNAL_8_NE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8ne.gif',
-  'TC_SIGNAL_8_SE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8se.gif',
-  'TC_SIGNAL_8_NW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8nw.gif',
-  'TC_SIGNAL_8_SW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8sw.gif',
-  'TC_SIGNAL_9': 'https://www.hko.gov.hk/common/images/warning_icons/tc9.gif',
-  'TC_SIGNAL_10': 'https://www.hko.gov.hk/common/images/warning_icons/tc10.gif',
-  'RAINSTORM_WARNING_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/rain_amber.gif',
-  'RAINSTORM_WARNING_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rain_red.gif',
-  'RAINSTORM_WARNING_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/rain_black.gif',
-  'COLD_WEATHER_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/cold.gif',
-  'HOT_WEATHER_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/vhot.gif',
-  'FROST_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/frost.gif',
-  'THUNDERSTORM_WARNING': 'https://www.hko.gov.hk/common/images/warning_icons/ts.gif',
-  'STRONG_MONSOON_SIGNAL': 'https://www.hko.gov.hk/common/images/warning_icons/sms.gif',
-  // 天文台官方工作暑熱動態圖標路徑對應 (asw=amber, rsw=red, bsw=black stress at work)
-  'HEAT_STRESS_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/asw.gif',
-  'HEAT_STRESS_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rsw.gif',
-  'HEAT_STRESS_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/bsw.gif',
-  'WORK_HEAT_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/asw.gif',
-  'WORK_HEAT_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rsw.gif',
-  'WORK_HEAT_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/bsw.gif',
-  'WSTRESS_AMBER': 'https://www.hko.gov.hk/common/images/warning_icons/asw.gif',
-  'WSTRESS_RED': 'https://www.hko.gov.hk/common/images/warning_icons/rsw.gif',
-  'WSTRESS_BLACK': 'https://www.hko.gov.hk/common/images/warning_icons/bsw.gif'
+  'TC1': 'https://www.hko.gov.hk/common/images/warning_icons/tc1.gif',
+  'TC3': 'https://www.hko.gov.hk/common/images/warning_icons/tc3.gif',
+  'TC8NE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8ne.gif',
+  'TC8SE': 'https://www.hko.gov.hk/common/images/warning_icons/tc8se.gif',
+  'TC8NW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8nw.gif',
+  'TC8SW': 'https://www.hko.gov.hk/common/images/warning_icons/tc8sw.gif',
+  'TC9': 'https://www.hko.gov.hk/common/images/warning_icons/tc9.gif',
+  'TC10': 'https://www.hko.gov.hk/common/images/warning_icons/tc10.gif',
+  'WRAINA': 'https://www.hko.gov.hk/common/images/warning_icons/rain_amber.gif',
+  'WRAINR': 'https://www.hko.gov.hk/common/images/warning_icons/rain_red.gif',
+  'WRAINB': 'https://www.hko.gov.hk/common/images/warning_icons/rain_black.gif',
+  'WCOLD': 'https://www.hko.gov.hk/common/images/warning_icons/cold.gif',
+  'WHOT': 'https://www.hko.gov.hk/common/images/warning_icons/vhot.gif',
+  'WFROST': 'https://www.hko.gov.hk/common/images/warning_icons/frost.gif',
+  'WTS': 'https://www.hko.gov.hk/common/images/warning_icons/ts.gif',
+  'WMSGNL': 'https://www.hko.gov.hk/common/images/warning_icons/sms.gif',
+  'WFIREY': 'https://www.hko.gov.hk/common/images/warning_icons/firey.gif',
+  'WFIRED': 'https://www.hko.gov.hk/common/images/warning_icons/firer.gif'
 };
 
 var WARN_CSS = {
-  'TC_SIGNAL_3':'wT3','TC_SIGNAL_8_NE':'wT8','TC_SIGNAL_8_SE':'wT8','TC_SIGNAL_8_NW':'wT8','TC_SIGNAL_8_SW':'wT8','TC_SIGNAL_9':'wT8','TC_SIGNAL_10':'wT10',
-  'RAINSTORM_WARNING_AMBER':'wAMBER','RAINSTORM_WARNING_RED':'wRED','RAINSTORM_WARNING_BLACK':'wBLACK',
-  'COLD_WEATHER_WARNING':'wCOLD','HOT_WEATHER_WARNING':'wHEAT','FROST_WARNING':'wCOLD',
-  'HEAT_STRESS_AMBER':'wAMBER','HEAT_STRESS_RED':'wRED','HEAT_STRESS_BLACK':'wBLACK',
-  'WORK_HEAT_AMBER':'wAMBER','WORK_HEAT_RED':'wRED','WORK_HEAT_BLACK':'wBLACK',
-  'WSTRESS_AMBER':'wAMBER','WSTRESS_RED':'wRED','WSTRESS_BLACK':'wBLACK'
+  'TC3':'wT3','TC8NE':'wT8','TC8SE':'wT8','TC8NW':'wT8','TC8SW':'wT8','TC9':'wT8','TC10':'wT10',
+  'WRAINA':'wAMBER','WRAINR':'wRED','WRAINB':'wBLACK',
+  'WCOLD':'wCOLD','WHOT':'wHEAT','WFROST':'wCOLD',
+  'WFIREY':'wAMBER','WFIRED':'wRED'
 };
+
 var ICONS = {50:'☀️',51:'🌤️',52:'🌤️',53:'⛅',54:'🌧️',60:'🌧️',61:'⛈️',62:'⛈️',63:'🌩️',64:'🌩️',65:'🌧️',70:'☁️',71:'☁️',76:'🌫️',80:'🌦️',85:'⛈️',90:'🌡️'};
 
 function fetchWeather() {
+  // 獲取即時天氣資料 (溫度/濕度/天氣描述)
   xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc', function(err, obs) {
     if (!err && obs) {
       var temp='--', humid='--';
-      var tArr = obs.temperature&&obs.temperature.data||[];
-      for(var i=0;i<tArr.length;i++){if(tArr[i].place==='九龍城'){temp=Math.round(tArr[i].value);break;}}
-      if(temp==='--'&&tArr.length) temp=Math.round(tArr[0].value);
-      var hArr = obs.humidity&&obs.humidity.data||[];
-      for(var j=0;j<hArr.length;j++){if(hArr[j].place==='九龍城'){humid=hArr[j].value;break;}}
-      if(humid==='--'&&hArr.length) humid=hArr[0].value;
-      var icon = obs.icon&&obs.icon[0] ? (ICONS[obs.icon[0]]||'🌡️') : '🌡️';
-      var desc = obs.text ? obs.text.substring(0,50) : '';
+      var tArr = obs.temperature && obs.temperature.data || [];
+      for(var i=0; i<tArr.length; i++){ if(tArr[i].place==='九龍城'){ temp=Math.round(tArr[i].value); break; } }
+      if(temp==='--' && tArr.length) temp=Math.round(tArr[0].value);
+      
+      var hArr = obs.humidity && obs.humidity.data || [];
+      for(var j=0; j<hArr.length; j++){ if(hArr[j].place==='九龍城'){ humid=hArr[j].value; break; } }
+      if(humid==='--' && hArr.length) humid=hArr[0].value;
+      
+      var icon = obs.icon && obs.icon[0] ? (ICONS[obs.icon[0]]||'🌡️') : '🌡️';
+      var desc = obs.text ? obs.text.substring(0,60) : '';
+      
       document.getElementById('w-icon').textContent = icon;
       document.getElementById('weather-temp').textContent = temp+'°C';
       document.getElementById('weather-desc').textContent = desc;
@@ -443,51 +447,61 @@ function fetchWeather() {
     }
   });
   
+  // 獲取現正生效天氣警告 (使用 actionCode 判斷)
   xhrGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc', function(err, warn) {
-    if (err || !warn) return;
     var badges = document.getElementById('warning-badges');
     badges.innerHTML = '';
     var tickerWarns = [];
-    for (var code in warn) {
-      if (warn[code] && warn[code].inForce) {
-        var label = WARN_LABEL[code] || code;
-        var iconUrl = WARN_ICON[code];
-        
-        if (iconUrl) {
-          var img = document.createElement('img');
-          img.className = 'warn-icon-img';
-          img.src = iconUrl;
-          img.alt = label;
-          badges.appendChild(img);
-        } else {
-          var css = WARN_CSS[code] || 'wT3';
-          var b = document.createElement('span');
-          b.className = 'warn-badge ' + css;
-          b.textContent = label;
-          badges.appendChild(b);
+    
+    if (!err && warn) {
+      for (var code in warn) {
+        var warnItem = warn[code];
+        // 確保警告現正生效
+        if (warnItem && warnItem.actionCode === 'ISSUE') {
+          var label = WARN_LABEL[code] || warnItem.name || code;
+          var iconUrl = WARN_ICON[code];
+          
+          if (iconUrl) {
+            var img = document.createElement('img');
+            img.className = 'warn-icon-img';
+            img.src = iconUrl;
+            img.alt = label;
+            badges.appendChild(img);
+          } else {
+            var css = WARN_CSS[code] || 'wT3';
+            var b = document.createElement('span');
+            b.className = 'warn-badge ' + css;
+            b.textContent = label;
+            badges.appendChild(b);
+          }
+          tickerWarns.push(label);
         }
-        tickerWarns.push(label);
       }
     }
+    
+    var tickerInner = document.getElementById('ticker-inner');
     if (tickerWarns.length) {
-      document.getElementById('ticker-inner').textContent =
-        '⚠️ '+tickerWarns.join('  │  ')+'  │  排隊候車，先落後上 Please queue and let passengers alight first';
+      tickerInner.textContent = '⚠️ 天文台現正生效：' + tickerWarns.join(' ｜ ') + ' ｜ 🚌 排隊候車，先落後上 ｜ 請緊握扶手';
+    } else {
+      tickerInner.textContent = '🚌 排隊候車，先落後上 ｜ 乘車時請緊握扶手，確保安全 ｜ 衙前圍道 Nga Tsin Wai Road';
     }
   });
 }
 
-// ── Boot ──
-findStops(function() {
-  document.getElementById('loading-txt').textContent = '載入到站時間…';
+// ── 啟動初始化 ──
+initStopIds(function() {
+  document.getElementById('loading-txt').textContent = '正在獲取即時到站時間…';
   fetchETA(function() {
     fetchWeather();
+    // 關閉 Loading 畫面，顯示主程式
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').className = 'show';
-    setInterval(fetchETA, 60000);
-    setInterval(fetchWeather, 300000);
+    
+    // 設定定時輪詢
+    setInterval(fetchETA, 30000);     // 巴士到站時間每 30 秒更新一次
+    setInterval(fetchWeather, 120000); // 天氣資訊每 2 分鐘更新一次
   });
 });
 </script>
 </body>
 </html>
-
