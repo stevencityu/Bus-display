@@ -37,7 +37,7 @@
 
     /* 底部走馬燈 */
     #ticker { background: var(--gold); color: #000; font-size: 20px; font-weight: 900; padding: 12px 0; overflow: hidden; white-space: nowrap; flex-shrink: 0; }
-    #ticker-inner { display: inline-block; padding-left: 100%; animation: scroll 45s linear infinite; } /* 增長滾動時間以應付長新聞 */
+    #ticker-inner { display: inline-block; padding-left: 100%; animation: scroll 55s linear infinite; }
     @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 </style>
 </head>
@@ -60,6 +60,7 @@
     </div>
 </div>
 
+<!-- 走馬燈區塊 -->
 <div id="ticker">
     <div id="ticker-inner">正在獲取最新天氣、巴士及即時新聞資訊...</div>
 </div>
@@ -73,14 +74,12 @@ const ROUTES = [
     { route:'85A', destZh:'廣源', stop:'95A03A5E58916EA3' }
 ];
 
-// 天氣警告圖示
 const WARN_IMAGES = {
     "TC1":"tc1","TC3":"tc3","TC8NE":"tc8ne","TC8SE":"tc8se","TC8NW":"tc8nw","TC8SW":"tc8sw",
     "TC9":"tc9","TC10":"tc10","WRAINA":"rain_amber","WRAINR":"rain_red","WRAINB":"rain_black",
     "WCOLD":"cold","WHOT":"vhot","WFROST":"frost","WTS":"ts","WMSGNL":"sms","WFIREY":"firey","WFIRED":"firer"
 };
 
-// 天氣警告純文字名稱
 const WARN_NAMES = {
     "WFIREY":"黃色火災危險警告", "WFIRED":"紅色火災危險警告", "WFROST":"霜凍警告", "WHOT":"酷熱天氣警告",
     "WCOLD":"寒冷天氣警告", "WMSGNL":"強烈季候風信號", "WRAINA":"黃色暴雨警告信號", "WRAINR":"紅色暴雨警告信號",
@@ -154,23 +153,47 @@ async function update() {
         }
     } catch(e) {}
 
+    // C. 獲取星島日報即時港聞
     try {
-        // C. 獲取香港電台即時新聞 (抓取最新 5 條新聞標題)
-        const newsRes = await fetch('https://api.rss2json.com/v1/api.json?rss_url=http%3A%2F%2Fnews.rthk.hk%2Frthk%2Fch%2Fch-news-flash.xml');
+        // 星島日報即時香港新聞 RSS URL
+        const targetRss = encodeURIComponent('https://std.stheadline.com/rss/std-realtime-hongkong.xml'); 
+        const newsRes = await fetch(`https://api.allorigins.win/get?url=${targetRss}`);
         const newsJson = await newsRes.json();
         
-        if (newsJson.items && newsJson.items.length > 0) {
-            const newsTitles = newsJson.items.slice(0, 5).map(item => item.title);
-            tickerText += `📰 即時新聞：${newsTitles.join(' ｜ ')}`;
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(newsJson.contents, "text/xml");
+        const items = xmlDoc.getElementsByTagName("item");
+        
+        if (items && items.length > 0) {
+            let titles = [];
+            // 抓取前 5 條新聞
+            for (let i = 0; i < Math.min(items.length, 5); i++) {
+                const titleNode = items[i].getElementsByTagName("title")[0];
+                if(titleNode) {
+                    titles.push(titleNode.textContent.trim());
+                }
+            }
+            tickerText += `📰 星島即時港聞：${titles.join(' ｜ ')}`;
+        } else {
+            throw new Error("星島 RSS 解析失敗");
         }
     } catch(e) {
-        // 如果新聞 API 失敗，顯示預設的巴士提示
-        if (activeWarnings.length === 0) {
-            tickerText = "🚌 歡迎使用衙前圍道巴士即時資訊系統 ｜ 乘車時請緊握扶手，先落後上";
+        // 備用應變：若星島代理斷線，自動無縫切換至政府新聞網 JSON，絕不卡死
+        try {
+            const govRes = await fetch('https://www.news.gov.hk/tc/common/html/ticker.json');
+            const govArr = await govRes.json();
+            if (govArr && govArr.length > 0) {
+                const newsTitles = govArr.slice(0, 5).map(item => item.title);
+                tickerText += `📰 即時新聞：${newsTitles.join(' ｜ ')}`;
+            }
+        } catch(err) {
+            if (activeWarnings.length === 0) {
+                tickerText = "🚌 歡迎使用衙前圍道巴士即時資訊系統 ｜ 乘車時請緊握扶手，先落後上";
+            }
         }
     }
 
-    // 4. 將整合好的內容塞入走馬燈
+    // 4. 更新走馬燈文字
     if (tickerText) {
         document.getElementById('ticker-inner').textContent = tickerText + " ｜ ";
     }
