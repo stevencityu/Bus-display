@@ -147,11 +147,18 @@ updateClock();
 function xhrGet(url, cb) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url, true);
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4 && xhr.status === 200) try { cb(null, JSON.parse(xhr.responseText)); } catch(e) { cb(e); }
+  xhr.onload = function() {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      try { cb(null, JSON.parse(xhr.responseText)); } catch(e) { cb(e); }
+    } else {
+      console.error("請求失敗，狀態碼：" + xhr.status); // 在此查看是否有錯誤
+      cb("HTTP Error: " + xhr.status);
+    }
   };
+  xhr.onerror = function() { console.error("網絡請求被阻擋 (CORS?)"); };
   xhr.send();
 }
+
 
 function fetchETA(done) {
   var now = new Date();
