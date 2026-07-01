@@ -6,7 +6,7 @@
 <title>衙前圍道 - 即時資訊牌</title>
 <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    :root { --gold: #c8a400; --bg: #0d0d0d; --bg2: #161616; --txt: #ffffff; --green: #43a047; }
+    :root { --gold: #c8a400; --bg: #0d0d0d; --bg2: #161616; --txt: #ffffff; --green: #43a047; --alert: #ff5252; }
     body { background: var(--bg); color: var(--txt); font-family: 'Helvetica Neue', Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     #header { background: var(--bg2); border-bottom: 3px solid var(--gold); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
     #clock { font-size: 50px; font-weight: bold; font-family: monospace; }
@@ -17,10 +17,17 @@
     .bus-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #333; }
     .rnum { width: 100px; font-size: 32px; font-weight: 900; color: var(--gold); }
     .rdest { flex: 1; font-size: 20px; }
+    
     .eta-group { text-align: right; }
     .eta-main { font-size: 36px; color: var(--green); font-weight: bold; }
     .eta-sub { font-size: 16px; color: #888; margin-top: 2px; }
 
+    /* 即將到站的閃爍與變色特效 */
+    .arriving { color: var(--alert); animation: blink 1.2s infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* 天氣與警告標籤 */
+    #humidity { font-size: 24px; color: #4dadf7; margin-top: 5px; font-weight: bold; }
     #warning-badges { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
     .warn-icon { height: 50px; }
 </style>
@@ -39,6 +46,7 @@
     <div id="weather-section">
         <div id="w-icon"></div>
         <div id="temp" style="font-size: 60px; font-weight: 900;">--°C</div>
+        <div id="humidity">💧 --%</div>
         <div id="warning-badges"></div>
     </div>
 </div>
@@ -59,12 +67,72 @@ const WARN_IMAGES = {
 };
 
 async function update() {
+    // 1. 更新時鐘
     document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit', minute:'2-digit', hour12:false});
     
     const list = document.getElementById('eta-list');
     list.innerHTML = '';
     
+    // 2. 獲取巴士 ETA
     for(const r of ROUTES) {
         try {
             const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${r.stop}`);
             const json = await res.json();
+            
+            const rawData = json.data ? json.data.filter(i => i.route === r.route && i.eta) : [];
+            let minsArray = rawData.map(i => Math.round((new Date(i.eta) - new Date()) / 60000)).filter(m => m >= 0);
+            minsArray = [...new Set(minsArray)].sort((a, b) => a - b);
+
+            const mainEta = minsArray.length > 0 ? minsArray[0] : '--';
+            const subEta = minsArray.length > 1 ? minsArray[1] : '--';
+            
+            const isArriving = mainEta === 0;
+            const mainText = isArriving ? '即將到站' : (mainEta === '--' ? '暫無班次' : mainEta + ' 分');
+            const mainClass = isArriving ? 'eta-main arriving' : 'eta-main';
+            
+            list.innerHTML += `
+                <div class="bus-row">
+                    <div class="rnum">${r.route}</div>
+                    <div class="rdest">${r.destZh}</div>
+                    <div class="eta-group">
+                        <div class="${mainClass}">${mainText}</div>
+                        <div class="eta-sub">${subEta !== '--' ? '次班: ' + subEta + ' 分' : ''}</div>
+                    </div>
+                </div>`;
+        } catch(e) {}
+    }
+
+    // 3. 更新天氣資訊 (溫度、濕度、圖示、警告)
+    try {
+        const obs = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r=>r.json());
+        
+        // 溫度 (取九龍城)
+        document.getElementById('temp').textContent = obs.temperature.data.find(i=>i.place==='九龍城').value + '°C';
+        
+        // 濕度 (取香港天文台)
+        const humidityData = obs.humidity.data.find(i=>i.place==='香港天文台');
+        if(humidityData) {
+            document.getElementById('humidity').textContent = '💧 ' + humidityData.value + '%';
+        }
+        
+        // 天氣圖示
+        document.getElementById('w-icon').innerHTML = `<img src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic${obs.icon[0]}.png" style="width:120px;">`;
+        
+        // 天氣警告
+        const warn = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r=>r.json());
+        const badges = document.getElementById('warning-badges');
+        badges.innerHTML = '';
+        Object.keys(warn).forEach(k => {
+            if(warn[k].actionCode === 'ISSUE' && WARN_IMAGES[k]) {
+                badges.innerHTML += `<img class="warn-icon" src="https://www.hko.gov.hk/tc/textonly/img/warn/images/${WARN_IMAGES[k]}.gif">`;
+            }
+        });
+    } catch(e) {}
+}
+
+// 初次載入與每分鐘自動更新
+update();
+setInterval(update, 60000);
+</script>
+</body>
+</html>
