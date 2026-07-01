@@ -11,30 +11,22 @@
         --txt: #ffffff; --dim: #888; --green: #43a047;
     }
     body { background: var(--bg); color: var(--txt); font-family: 'Helvetica Neue', Arial, 'Microsoft JhengHei', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-    /* 頂部 Header */
     #header { background: var(--bg2); border-bottom: 3px solid var(--gold); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
     #stop-zh { font-size: 32px; font-weight: 900; }
     #stop-en { font-size: 14px; color: var(--dim); }
     #clock { font-size: 50px; font-weight: bold; font-family: monospace; }
-
-    /* 主體區塊 */
     #main-container { display: flex; flex: 1; min-height: 0; }
     #eta-section { flex: 2; border-right: 2px solid #333; overflow-y: auto; }
     #weather-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-
-    /* 巴士列表 */
     #table-header { background: var(--gold); color: #000; display: flex; padding: 10px 20px; font-weight: 900; font-size: 16px; }
     .bus-row { display: flex; align-items: center; padding: 20px; border-bottom: 1px solid #333; }
     .rnum { width: 100px; font-size: 36px; font-weight: 900; color: var(--gold); }
     .rdest { flex: 1; font-size: 24px; font-weight: bold; }
     .reta { font-size: 40px; color: var(--green); font-weight: bold; }
-
-    /* 天氣樣式 */
     #w-icon img { width: 150px; }
     #temp { font-size: 80px; font-weight: 900; }
     #humidity { font-size: 24px; color: #4dadf7; }
-    #warning-badges { display: flex; gap: 10px; margin-top: 20px; }
+    #warning-badges { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
     .warn-icon { height: 50px; }
 </style>
 </head>
@@ -59,7 +51,7 @@
 </div>
 
 <script>
-// 設定路線與 ID
+// 所有路線配置與對應的 ID
 const ROUTES = [
     { route:'11D', destZh:'樂富', stop:'3529BA34A1BE33A7' },
     { route:'75X', destZh:'大埔(富善)', stop:'7209935E8E899496' },
@@ -68,13 +60,21 @@ const ROUTES = [
     { route:'1',   destZh:'尖沙咀', stop:'DB581AD59964EA41' }
 ];
 
+// 天氣警告代碼轉圖片映射表 (指向 HKO 官方圖示)
+const WARN_IMAGES = {
+    "TC1":"tc1", "TC3":"tc3", "TC8NE":"tc8ne", "TC8SE":"tc8se", "TC8NW":"tc8nw", "TC8SW":"tc8sw", 
+    "TC9":"tc9", "TC10":"tc10", "WRAINA":"rain_amber", "WRAINR":"rain_red", "WRAINB":"rain_black", 
+    "WCOLD":"cold", "WHOT":"vhot", "WFROST":"frost", "WTS":"ts", "WMSGNL":"sms", 
+    "WFIREY":"firey", "WFIRED":"firer"
+};
+
 async function update() {
-    // 時間
     document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit', minute:'2-digit', hour12:false});
 
-    // 巴士 ETA
     const list = document.getElementById('eta-list');
     list.innerHTML = '';
+    
+    // 更新巴士 ETA
     for(const r of ROUTES) {
         try {
             const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${r.stop}`);
@@ -82,17 +82,12 @@ async function update() {
             const bus = json.data ? json.data.find(i => i.route === r.route) : null;
             if(bus) {
                 const mins = Math.max(0, Math.round((new Date(bus.eta) - new Date()) / 60000));
-                list.innerHTML += `
-                    <div class="bus-row">
-                        <div class="rnum">${r.route}</div>
-                        <div class="rdest">${r.destZh}</div>
-                        <div class="reta">${mins}分</div>
-                    </div>`;
+                list.innerHTML += `<div class="bus-row"><div class="rnum">${r.route}</div><div class="rdest">${r.destZh}</div><div class="reta">${mins}分</div></div>`;
             }
         } catch(e) {}
     }
 
-    // 天氣
+    // 更新天氣
     try {
         const obs = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r=>r.json());
         document.getElementById('temp').textContent = obs.temperature.data.find(i=>i.place==='九龍城').value + '°C';
@@ -103,8 +98,8 @@ async function update() {
         const badges = document.getElementById('warning-badges');
         badges.innerHTML = '';
         Object.keys(warn).forEach(k => {
-            if(warn[k].actionCode === 'ISSUE') {
-                badges.innerHTML += `<img class="warn-icon" src="https://www.hko.gov.hk/tc/textonly/img/warn/images/${k.toLowerCase()}.gif">`;
+            if(warn[k].actionCode === 'ISSUE' && WARN_IMAGES[k]) {
+                badges.innerHTML += `<img class="warn-icon" src="https://www.hko.gov.hk/tc/textonly/img/warn/images/${WARN_IMAGES[k]}.gif">`;
             }
         });
     } catch(e) {}
