@@ -2,71 +2,116 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<title>巴士資訊牌</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>衙前圍道巴士站 - 電子資訊牌</title>
 <style>
-    body { background:#0d0d0d; color:#fff; font-family:sans-serif; margin:0; overflow:hidden; }
-    #app { display:flex; height:100vh; }
-    #left { flex:2; padding:20px; border-right:1px solid #333; }
-    #right { flex:1; padding:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-    .row { display:flex; align-items:center; padding:15px; border-bottom:1px solid #222; }
-    .route { width:100px; font-size:30px; font-weight:bold; color:#c8a400; }
-    .eta { font-size:24px; color:#43a047; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    :root { 
+        --gold: #c8a400; --bg: #0d0d0d; --bg2: #161616; 
+        --txt: #ffffff; --dim: #888; --green: #43a047;
+    }
+    body { background: var(--bg); color: var(--txt); font-family: 'Helvetica Neue', Arial, 'Microsoft JhengHei', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* 頂部 Header */
+    #header { background: var(--bg2); border-bottom: 3px solid var(--gold); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
+    #stop-zh { font-size: 32px; font-weight: 900; }
+    #stop-en { font-size: 14px; color: var(--dim); }
+    #clock { font-size: 50px; font-weight: bold; font-family: monospace; }
+
+    /* 主體區塊 */
+    #main-container { display: flex; flex: 1; min-height: 0; }
+    #eta-section { flex: 2; border-right: 2px solid #333; overflow-y: auto; }
+    #weather-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+
+    /* 巴士列表 */
+    #table-header { background: var(--gold); color: #000; display: flex; padding: 10px 20px; font-weight: 900; font-size: 16px; }
+    .bus-row { display: flex; align-items: center; padding: 20px; border-bottom: 1px solid #333; }
+    .rnum { width: 100px; font-size: 36px; font-weight: 900; color: var(--gold); }
+    .rdest { flex: 1; font-size: 24px; font-weight: bold; }
+    .reta { font-size: 40px; color: var(--green); font-weight: bold; }
+
+    /* 天氣樣式 */
+    #w-icon img { width: 150px; }
+    #temp { font-size: 80px; font-weight: 900; }
+    #humidity { font-size: 24px; color: #4dadf7; }
+    #warning-badges { display: flex; gap: 10px; margin-top: 20px; }
+    .warn-icon { height: 50px; }
 </style>
 </head>
 <body>
-<div id="app">
-    <div id="left"><div id="eta-list">正在重新連結數據...</div></div>
-    <div id="right">
-        <img id="w-icon" style="width:100px;">
-        <div id="temp" style="font-size:50px;">--°C</div>
-        <div id="warning-container"></div>
+
+<div id="header">
+    <div><div id="stop-zh">衙前圍道</div><div id="stop-en">Nga Tsin Wai Road</div></div>
+    <div id="clock">--:--</div>
+</div>
+
+<div id="main-container">
+    <div id="eta-section">
+        <div id="table-header"><span>路線</span><span style="flex:1; padding-left:20px;">目的地</span><span>ETA</span></div>
+        <div id="eta-list"></div>
+    </div>
+    <div id="weather-section">
+        <div id="w-icon"></div>
+        <div id="temp">--°C</div>
+        <div id="humidity">--%</div>
+        <div id="warning-badges"></div>
     </div>
 </div>
 
 <script>
-const STOP_IDS = ["84ECCB274C4677E8", "DB581AD59964EA41", "95A03A5E58916EA3"];
-const ALLOWED = ['11D', '75X', '85', '85A', '1'];
+// 設定路線與 ID
+const ROUTES = [
+    { route:'11D', destZh:'樂富', stop:'3529BA34A1BE33A7' },
+    { route:'75X', destZh:'大埔(富善)', stop:'7209935E8E899496' },
+    { route:'85',  destZh:'火炭', stop:'9976378A5BCEAF0B' },
+    { route:'85A', destZh:'廣源', stop:'95A03A5E58916EA3' },
+    { route:'1',   destZh:'尖沙咀', stop:'DB581AD59964EA41' }
+];
 
-async function refresh() {
-    // 1. 抓巴士資料
+async function update() {
+    // 時間
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit', minute:'2-digit', hour12:false});
+
+    // 巴士 ETA
     const list = document.getElementById('eta-list');
-    let allData = [];
-    for(const id of STOP_IDS) {
+    list.innerHTML = '';
+    for(const r of ROUTES) {
         try {
-            const r = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${id}`);
-            const d = await r.json();
-            if(d.data) allData.push(...d.data);
+            const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${r.stop}`);
+            const json = await res.json();
+            const bus = json.data ? json.data.find(i => i.route === r.route) : null;
+            if(bus) {
+                const mins = Math.max(0, Math.round((new Date(bus.eta) - new Date()) / 60000));
+                list.innerHTML += `
+                    <div class="bus-row">
+                        <div class="rnum">${r.route}</div>
+                        <div class="rdest">${r.destZh}</div>
+                        <div class="reta">${mins}分</div>
+                    </div>`;
+            }
         } catch(e) {}
     }
-    
-    list.innerHTML = '';
-    ALLOWED.forEach(r => {
-        const bus = allData.filter(i => i.route === r).sort((a,b) => new Date(a.eta) - new Date(b.eta))[0];
-        if(bus) {
-            const m = Math.max(0, Math.round((new Date(bus.eta) - new Date()) / 60000));
-            list.innerHTML += `<div class="row"><div class="route">${r}</div><div>${bus.dest_tc}</div><div class="eta" style="margin-left:auto">${m} 分鐘</div></div>`;
-        }
-    });
 
-    // 2. 抓天氣
+    // 天氣
     try {
-        const tr = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
-        const td = await tr.json();
-        document.getElementById('temp').textContent = td.temperature.data.find(i=>i.place==='九龍城').value + '°C';
-        document.getElementById('w-icon').src = `https://www.hko.gov.hk/images/HKOWxIconOutline/pic${td.icon[0]}.png`;
+        const obs = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r=>r.json());
+        document.getElementById('temp').textContent = obs.temperature.data.find(i=>i.place==='九龍城').value + '°C';
+        document.getElementById('humidity').textContent = '💧 ' + obs.humidity.data.find(i=>i.place==='香港天文台').value + '%';
+        document.getElementById('w-icon').innerHTML = `<img src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic${obs.icon[0]}.png">`;
         
-        const wr = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc');
-        const wd = await wr.json();
-        const wc = document.getElementById('warning-container');
-        wc.innerHTML = '';
-        Object.keys(wd).forEach(k => {
-            if(wd[k].actionCode === 'ISSUE') wc.innerHTML += `<img src="https://www.hko.gov.hk/tc/textonly/img/warn/images/${k.toLowerCase()}.gif" height="30">`;
+        const warn = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r=>r.json());
+        const badges = document.getElementById('warning-badges');
+        badges.innerHTML = '';
+        Object.keys(warn).forEach(k => {
+            if(warn[k].actionCode === 'ISSUE') {
+                badges.innerHTML += `<img class="warn-icon" src="https://www.hko.gov.hk/tc/textonly/img/warn/images/${k.toLowerCase()}.gif">`;
+            }
         });
     } catch(e) {}
 }
 
-refresh();
-setInterval(refresh, 60000);
+update();
+setInterval(update, 60000);
 </script>
 </body>
 </html>
