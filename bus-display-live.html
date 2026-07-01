@@ -3,29 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>衙前圍道巴士站 - 電子資訊牌</title>
+<title>衙前圍道 - 即時資訊牌</title>
 <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    :root { 
-        --gold: #c8a400; --bg: #0d0d0d; --bg2: #161616; 
-        --txt: #ffffff; --dim: #888; --green: #43a047;
-    }
-    body { background: var(--bg); color: var(--txt); font-family: 'Helvetica Neue', Arial, 'Microsoft JhengHei', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    :root { --gold: #c8a400; --bg: #0d0d0d; --bg2: #161616; --txt: #ffffff; --green: #43a047; }
+    body { background: var(--bg); color: var(--txt); font-family: 'Helvetica Neue', Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     #header { background: var(--bg2); border-bottom: 3px solid var(--gold); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
-    #stop-zh { font-size: 32px; font-weight: 900; }
-    #stop-en { font-size: 14px; color: var(--dim); }
     #clock { font-size: 50px; font-weight: bold; font-family: monospace; }
     #main-container { display: flex; flex: 1; min-height: 0; }
     #eta-section { flex: 2; border-right: 2px solid #333; overflow-y: auto; }
     #weather-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-    #table-header { background: var(--gold); color: #000; display: flex; padding: 10px 20px; font-weight: 900; font-size: 16px; }
-    .bus-row { display: flex; align-items: center; padding: 20px; border-bottom: 1px solid #333; }
-    .rnum { width: 100px; font-size: 36px; font-weight: 900; color: var(--gold); }
-    .rdest { flex: 1; font-size: 24px; font-weight: bold; }
-    .reta { font-size: 40px; color: var(--green); font-weight: bold; }
-    #w-icon img { width: 150px; }
-    #temp { font-size: 80px; font-weight: 900; }
-    #humidity { font-size: 24px; color: #4dadf7; }
+    
+    .bus-row { display: flex; align-items: center; padding: 15px 20px; border-bottom: 1px solid #333; }
+    .rnum { width: 100px; font-size: 32px; font-weight: 900; color: var(--gold); }
+    .rdest { flex: 1; font-size: 20px; }
+    .eta-group { text-align: right; }
+    .eta-main { font-size: 36px; color: var(--green); font-weight: bold; }
+    .eta-sub { font-size: 16px; color: #888; margin-top: 2px; }
+
     #warning-badges { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
     .warn-icon { height: 50px; }
 </style>
@@ -33,66 +28,70 @@
 <body>
 
 <div id="header">
-    <div><div id="stop-zh">衙前圍道</div><div id="stop-en">Nga Tsin Wai Road</div></div>
+    <div><h1>衙前圍道</h1><p style="color:#888;">Nga Tsin Wai Road</p></div>
     <div id="clock">--:--</div>
 </div>
 
 <div id="main-container">
     <div id="eta-section">
-        <div id="table-header"><span>路線</span><span style="flex:1; padding-left:20px;">目的地</span><span>ETA</span></div>
         <div id="eta-list"></div>
     </div>
     <div id="weather-section">
         <div id="w-icon"></div>
-        <div id="temp">--°C</div>
-        <div id="humidity">--%</div>
+        <div id="temp" style="font-size: 60px; font-weight: 900;">--°C</div>
         <div id="warning-badges"></div>
     </div>
 </div>
 
 <script>
-// 所有路線配置與對應的 ID
 const ROUTES = [
-    { route:'11D', destZh:'樂富', stop:'84ECCB274C4677E8⁠' },
-    { route:'75X', destZh:'大埔(富善)', stop:'84ECCB274C4677E8⁠' },
+    { route:'11D', destZh:'樂富', stop:'84ECCB274C4677E8' },
+    { route:'75X', destZh:'大埔(富善)', stop:'84ECCB274C4677E8' },
+    { route:'1',   destZh:'尖沙咀', stop:'DB581AD59964EA41' },
     { route:'85',  destZh:'火炭', stop:'95A03A5E58916EA3' },
-    { route:'85A', destZh:'廣源', stop:'95A03A5E58916EA3' },
-    { route:'1',   destZh:'尖沙咀', stop:'DB581AD59964EA41' }
+    { route:'85A', destZh:'廣源', stop:'95A03A5E58916EA3' }
 ];
 
-// 天氣警告代碼轉圖片映射表 (指向 HKO 官方圖示)
 const WARN_IMAGES = {
-    "TC1":"tc1", "TC3":"tc3", "TC8NE":"tc8ne", "TC8SE":"tc8se", "TC8NW":"tc8nw", "TC8SW":"tc8sw", 
-    "TC9":"tc9", "TC10":"tc10", "WRAINA":"rain_amber", "WRAINR":"rain_red", "WRAINB":"rain_black", 
-    "WCOLD":"cold", "WHOT":"vhot", "WFROST":"frost", "WTS":"ts", "WMSGNL":"sms", 
-    "WFIREY":"firey", "WFIRED":"firer"
+    "TC1":"tc1","TC3":"tc3","TC8NE":"tc8ne","TC8SE":"tc8se","TC8NW":"tc8nw","TC8SW":"tc8sw",
+    "TC9":"tc9","TC10":"tc10","WRAINA":"rain_amber","WRAINR":"rain_red","WRAINB":"rain_black",
+    "WCOLD":"cold","WHOT":"vhot","WFROST":"frost","WTS":"ts","WMSGNL":"sms","WFIREY":"firey","WFIRED":"firer"
 };
 
 async function update() {
     document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit', minute:'2-digit', hour12:false});
-
+    
     const list = document.getElementById('eta-list');
     list.innerHTML = '';
     
-    // 更新巴士 ETA
     for(const r of ROUTES) {
         try {
             const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${r.stop}`);
             const json = await res.json();
-            const bus = json.data ? json.data.find(i => i.route === r.route) : null;
-            if(bus) {
-                const mins = Math.max(0, Math.round((new Date(bus.eta) - new Date()) / 60000));
-                list.innerHTML += `<div class="bus-row"><div class="rnum">${r.route}</div><div class="rdest">${r.destZh}</div><div class="reta">${mins}分</div></div>`;
-            }
+            // 抓取該路線所有未到站的班次，並篩選出前兩班
+            const busArr = json.data ? json.data.filter(i => i.route === r.route && new Date(i.eta) > new Date()) : [];
+            const sorted = busArr.sort((a,b) => new Date(a.eta) - new Date(b.eta)).slice(0, 2);
+            
+            const mainEta = sorted.length > 0 ? Math.round((new Date(sorted[0].eta) - new Date()) / 60000) : '--';
+            const subEta = sorted.length > 1 ? Math.round((new Date(sorted[1].eta) - new Date()) / 60000) : '--';
+            
+            list.innerHTML += `
+                <div class="bus-row">
+                    <div class="rnum">${r.route}</div>
+                    <div class="rdest">${r.destZh}</div>
+                    <div class="eta-group">
+                        <div class="eta-main">${mainEta === 0 ? '即將到站' : mainEta + ' 分'}</div>
+                        <div class="eta-sub">${subEta !== '--' ? '次班: ' + subEta + ' 分' : ''}</div>
+                    </div>
+                </div>`;
         } catch(e) {}
     }
 
-    // 更新天氣
+    // 更新天氣警告
     try {
         const obs = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r=>r.json());
         document.getElementById('temp').textContent = obs.temperature.data.find(i=>i.place==='九龍城').value + '°C';
-        document.getElementById('humidity').textContent = '💧 ' + obs.humidity.data.find(i=>i.place==='香港天文台').value + '%';
-        document.getElementById('w-icon').innerHTML = `<img src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic${obs.icon[0]}.png">`;
+        document.getElementById('w-icon').innerHTML = `<img src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic${obs.icon[0]}.png" style="width:120px;">`;
         
         const warn = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r=>r.json());
         const badges = document.getElementById('warning-badges');
