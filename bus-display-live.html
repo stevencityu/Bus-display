@@ -37,7 +37,7 @@
 
     /* 底部走馬燈 */
     #ticker { background: var(--gold); color: #000; font-size: 20px; font-weight: 900; padding: 12px 0; overflow: hidden; white-space: nowrap; flex-shrink: 0; }
-    #ticker-inner { display: inline-block; padding-left: 100%; animation: scroll 25s linear infinite; }
+    #ticker-inner { display: inline-block; padding-left: 100%; animation: scroll 45s linear infinite; } /* 增長滾動時間以應付長新聞 */
     @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 </style>
 </head>
@@ -61,7 +61,7 @@
 </div>
 
 <div id="ticker">
-    <div id="ticker-inner">正在獲取最新天氣與巴士資訊...</div>
+    <div id="ticker-inner">正在獲取最新天氣、巴士及即時新聞資訊...</div>
 </div>
 
 <script>
@@ -80,7 +80,7 @@ const WARN_IMAGES = {
     "WCOLD":"cold","WHOT":"vhot","WFROST":"frost","WTS":"ts","WMSGNL":"sms","WFIREY":"firey","WFIRED":"firer"
 };
 
-// 天氣警告純文字名稱 (供走馬燈使用)
+// 天氣警告純文字名稱
 const WARN_NAMES = {
     "WFIREY":"黃色火災危險警告", "WFIRED":"紅色火災危險警告", "WFROST":"霜凍警告", "WHOT":"酷熱天氣警告",
     "WCOLD":"寒冷天氣警告", "WMSGNL":"強烈季候風信號", "WRAINA":"黃色暴雨警告信號", "WRAINR":"紅色暴雨警告信號",
@@ -125,22 +125,22 @@ async function update() {
         } catch(e) {}
     }
 
-    // 3. 更新天氣資訊與走馬燈
+    // 3. 更新天氣資訊與即時新聞
+    let tickerText = "";
+    let activeWarnings = [];
+
     try {
+        // A. 天氣實況
         const obs = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r=>r.json());
-        
         document.getElementById('temp').textContent = obs.temperature.data.find(i=>i.place==='九龍城').value + '°C';
-        
         const humidityData = obs.humidity.data.find(i=>i.place==='香港天文台');
         if(humidityData) document.getElementById('humidity').textContent = '💧 ' + humidityData.value + '%';
-        
         document.getElementById('w-icon').innerHTML = `<img src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic${obs.icon[0]}.png" style="width:120px;">`;
         
+        // B. 天氣警告
         const warn = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc').then(r=>r.json());
         const badges = document.getElementById('warning-badges');
         badges.innerHTML = '';
-        
-        let activeWarnings = []; // 儲存生效中的警告名稱
         
         Object.keys(warn).forEach(k => {
             if(warn[k].actionCode === 'ISSUE') {
@@ -148,15 +148,32 @@ async function update() {
                 if(WARN_NAMES[k]) activeWarnings.push(WARN_NAMES[k]);
             }
         });
-        
-        // 更新走馬燈文字
-        const ticker = document.getElementById('ticker-inner');
+
         if(activeWarnings.length > 0) {
-            ticker.textContent = `⚠️ 天文台現正生效：${activeWarnings.join(' ｜ ')} ｜ 請注意天氣變化，安全出行`;
-        } else {
-            ticker.textContent = `🚌 歡迎使用衙前圍道巴士即時資訊系統 ｜ 乘車時請緊握扶手，先落後上`;
+            tickerText += `⚠️ 天文台現正生效：${activeWarnings.join(' ｜ ')} ｜ `;
         }
     } catch(e) {}
+
+    try {
+        // C. 獲取香港電台即時新聞 (抓取最新 5 條新聞標題)
+        const newsRes = await fetch('https://api.rss2json.com/v1/api.json?rss_url=http%3A%2F%2Fnews.rthk.hk%2Frthk%2Fch%2Fch-news-flash.xml');
+        const newsJson = await newsRes.json();
+        
+        if (newsJson.items && newsJson.items.length > 0) {
+            const newsTitles = newsJson.items.slice(0, 5).map(item => item.title);
+            tickerText += `📰 即時新聞：${newsTitles.join(' ｜ ')}`;
+        }
+    } catch(e) {
+        // 如果新聞 API 失敗，顯示預設的巴士提示
+        if (activeWarnings.length === 0) {
+            tickerText = "🚌 歡迎使用衙前圍道巴士即時資訊系統 ｜ 乘車時請緊握扶手，先落後上";
+        }
+    }
+
+    // 4. 將整合好的內容塞入走馬燈
+    if (tickerText) {
+        document.getElementById('ticker-inner').textContent = tickerText + " ｜ ";
+    }
 }
 
 // 初次載入與每分鐘自動更新
