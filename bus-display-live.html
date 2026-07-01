@@ -7,115 +7,91 @@
 <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { background:#0d0d0d; color:#f0f0f0; font-family:'Helvetica Neue', sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-    
-    /* Header */
     #header { padding:20px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center; }
-    .title-area h1 { font-size:28px; }
-    .title-area p { color:#888; font-size:14px; }
-    #clock-area { text-align:right; }
-    #clock { font-size:48px; font-weight:bold; }
-    #date { color:#888; }
-
-    /* Main Container */
     #main { display:flex; flex:1; overflow:hidden; }
-    #eta-list { flex:2; border-right:1px solid #333; overflow-y:auto; padding:10px 0; }
-    #weather-side { flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:20px; }
-
-    /* Row Style */
+    #eta-list { flex:2; border-right:1px solid #333; overflow-y:auto; }
     .erow { display:flex; align-items:center; padding:15px 20px; border-bottom:1px solid #222; }
     .rnum { width:100px; font-weight:bold; font-size:32px; color:#c8a400; }
     .rinfo { flex:1; }
-    .rinfo div:first-child { font-size:22px; font-weight:bold; }
-    .rinfo div:last-child { font-size:14px; color:#888; }
-    .eta { font-size:24px; color:#43a047; }
-
-    /* Weather Style */
-    #w-icon { width:150px; }
-    #temp { font-size:72px; font-weight:bold; }
-    #humidity { color:#4dadf7; font-size:24px; }
-
-    /* Footer */
-    #footer { padding:5px 20px; font-size:12px; color:#555; display:flex; justify-content:space-between; }
+    .eta { font-size:24px; color:#43a047; font-weight:bold; }
+    #weather-side { flex:1; display:flex; flex-direction:column; align-items:center; padding:20px; text-align:center; }
+    #warning-container { display:flex; gap:5px; margin-top:10px; }
 </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="title-area">
-        <h1>衙前圍道</h1>
-        <p>Nga Tsin Wai Road</p>
-    </div>
-    <div id="clock-area">
-        <div id="clock">--:--</div>
-        <div id="date">--</div>
-    </div>
+    <div><h1>衙前圍道 / 太子道西</h1><p>Nga Tsin Wai Rd / Prince Edward Rd W</p></div>
+    <div id="clock" style="font-size:48px; font-weight:bold;">--:--</div>
 </div>
 
 <div id="main">
     <div id="eta-list"></div>
     <div id="weather-side">
-        <img id="w-icon" src="" alt="weather">
-        <div id="temp">--°C</div>
-        <div id="humidity">--%</div>
-        <div id="w-desc">讀取中...</div>
+        <img id="w-icon" style="width:100px;">
+        <div id="temp" style="font-size:48px;">--°C</div>
+        <div id="humidity" style="color:#4dadf7;">--%</div>
+        <div id="warning-container"></div>
     </div>
 </div>
 
-<div id="footer">
-    <div id="last-update">最後更新：--:--</div>
-    <div>系統自動維護 · KMB + HKO DATA</div>
-</div>
-
 <script>
-// 設定對應的路線名稱 (配合你的 ID)
-const stopMapping = {
-    "84ECCB274C4677E8": ["11D", "75X", "85", "85A"],
-    "DB581AD59964EA41": ["1"]
-};
+// 設定所有想看的路線，這裡不用分開兩個 ID，直接用一個大清單去過濾
+const ALLOWED_ROUTES = ['11D', '75X', '85', '85A', '1'];
+const STOP_IDS = ["84ECCB274C4677E8", "DB581AD59964EA41"];
 
 async function update() {
-    // 1. 更新時鐘
-    const now = new Date();
-    document.getElementById('clock').textContent = now.toLocaleTimeString('zh-HK', {hour:'2-digit', minute:'2-digit', hour12:false});
-    document.getElementById('date').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 (${['日','一','二','三','四','五','六'][now.getDay()]})`;
-
-    // 2. 更新巴士列表
-    const list = document.getElementById('eta-list');
-    list.innerHTML = '';
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-HK', {hour:'2-digit', minute:'2-digit', hour12:false});
     
-    for (const [sid, routes] of Object.entries(stopMapping)) {
+    // 抓取所有站點資料
+    let allData = [];
+    for (const sid of STOP_IDS) {
         try {
             const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${sid}`);
             const json = await res.json();
-            if(json.data) {
-                json.data.filter(i => routes.includes(i.route)).forEach(item => {
-                    const mins = Math.round((new Date(item.eta) - now) / 60000);
-                    const div = document.createElement('div');
-                    div.className = 'erow';
-                    div.innerHTML = `
-                        <div class="rnum">${item.route}</div>
-                        <div class="rinfo"><div>${item.dest_tc}</div><div>${item.dest_en}</div></div>
-                        <div class="eta">${mins > 0 ? mins + ' 分鐘' : '即將抵達'}</div>
-                    `;
-                    list.appendChild(div);
-                });
-            }
-        } catch(e) { console.error(e); }
+            if (json.data) allData.push(...json.data);
+        } catch(e) {}
     }
 
-    // 3. 更新天氣
+    // 過濾、去重 (只留該路線最近的一班)、排序
+    const list = document.getElementById('eta-list');
+    list.innerHTML = '';
+    const now = new Date();
+    
+    // 只取指定路線，並且用 route 作為 key 去重
+    const filtered = allData.filter(i => ALLOWED_ROUTES.includes(i.route));
+    const finalData = [];
+    ALLOWED_ROUTES.forEach(r => {
+        const bus = filtered.filter(i => i.route === r && i.eta).sort((a,b) => new Date(a.eta) - new Date(b.eta))[0];
+        if(bus) finalData.push(bus);
+    });
+
+    finalData.forEach(item => {
+        const mins = Math.max(0, Math.round((new Date(item.eta) - now) / 60000));
+        const div = document.createElement('div');
+        div.className = 'erow';
+        div.innerHTML = `<div class="rnum">${item.route}</div><div class="rinfo">${item.dest_tc}</div><div class="eta">${mins} 分鐘</div>`;
+        list.appendChild(div);
+    });
+
+    // 天氣
     try {
         const res = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
         const data = await res.json();
-        const temp = data.temperature.data.find(i => i.place === '九龍城').value;
-        const hum = data.humidity.data.find(i => i.place === '香港天文台').value;
-        document.getElementById('temp').textContent = temp + '°C';
-        document.getElementById('humidity').textContent = '💧 ' + hum + '%';
-        document.getElementById('w-desc').textContent = data.forecastDesc;
+        document.getElementById('temp').textContent = data.temperature.data.find(i => i.place === '九龍城').value + '°C';
         document.getElementById('w-icon').src = `https://www.hko.gov.hk/images/HKOWxIconOutline/pic${data.icon[0]}.png`;
-    } catch(e) { document.getElementById('w-desc').textContent = "無法連線至天文台"; }
-    
-    document.getElementById('last-update').textContent = '最後更新：' + new Date().toLocaleTimeString('zh-HK', {hour12:false});
+        
+        // 警告
+        const resW = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc');
+        const warn = await resW.json();
+        const container = document.getElementById('warning-container');
+        container.innerHTML = '';
+        Object.keys(warn).forEach(k => {
+            if(warn[k].actionCode === 'ISSUE') {
+                container.innerHTML += `<img src="https://www.hko.gov.hk/tc/textonly/img/warn/images/${k.toLowerCase()}.gif" style="height:30px;">`;
+            }
+        });
+    } catch(e) {}
 }
 
 update();
