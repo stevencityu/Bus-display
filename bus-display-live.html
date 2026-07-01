@@ -68,12 +68,21 @@ async function update() {
         try {
             const res = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${r.stop}`);
             const json = await res.json();
-            // 抓取該路線所有未到站的班次，並篩選出前兩班
-            const busArr = json.data ? json.data.filter(i => i.route === r.route && new Date(i.eta) > new Date()) : [];
-            const sorted = busArr.sort((a,b) => new Date(a.eta) - new Date(b.eta)).slice(0, 2);
             
-            const mainEta = sorted.length > 0 ? Math.round((new Date(sorted[0].eta) - new Date()) / 60000) : '--';
-            const subEta = sorted.length > 1 ? Math.round((new Date(sorted[1].eta) - new Date()) / 60000) : '--';
+            // 抓取該路線有效班次並去重
+            const rawData = json.data ? json.data.filter(i => i.route === r.route && new Date(i.eta) > new Date()) : [];
+            const sorted = [];
+            rawData.sort((a,b) => new Date(a.eta) - new Date(b.eta)).forEach(item => {
+                const time = new Date(item.eta).getTime();
+                // 確保次班車與前一班間隔至少 1 分鐘，避免重複顯示
+                if (sorted.length === 0 || time > new Date(sorted[sorted.length - 1].eta).getTime() + 60000) {
+                    sorted.push(item);
+                }
+            });
+
+            const final = sorted.slice(0, 2);
+            const mainEta = final.length > 0 ? Math.round((new Date(final[0].eta) - new Date()) / 60000) : '--';
+            const subEta = final.length > 1 ? Math.round((new Date(final[1].eta) - new Date()) / 60000) : '--';
             
             list.innerHTML += `
                 <div class="bus-row">
@@ -87,7 +96,7 @@ async function update() {
         } catch(e) {}
     }
 
-    // 更新天氣警告
+    // 更新天氣與警告
     try {
         const obs = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc').then(r=>r.json());
         document.getElementById('temp').textContent = obs.temperature.data.find(i=>i.place==='九龍城').value + '°C';
