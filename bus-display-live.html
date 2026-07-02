@@ -73,14 +73,14 @@ const ROUTES = [
     { route:'85A', destZh:'廣源', stop:'95A03A5E58916EA3' }
 ];
 
-// 天氣警告圖示
+// 天氣警告圖示對應表
 const WARN_IMAGES = {
     "TC1":"tc1","TC3":"tc3","TC8NE":"tc8ne","TC8SE":"tc8se","TC8NW":"tc8nw","TC8SW":"tc8sw",
     "TC9":"tc9","TC10":"tc10","WRAINA":"rain_amber","WRAINR":"rain_red","WRAINB":"rain_black",
     "WCOLD":"cold","WHOT":"vhot","WFROST":"frost","WTS":"ts","WMSGNL":"sms","WFIREY":"firey","WFIRED":"firer"
 };
 
-// 天氣警告純文字名稱 (供走馬燈使用)
+// 天氣警告純文字名稱對應表 (走馬燈用)
 const WARN_NAMES = {
     "WFIREY":"黃色火災危險警告", "WFIRED":"紅色火災危險警告", "WFROST":"霜凍警告", "WHOT":"酷熱天氣警告",
     "WCOLD":"寒冷天氣警告", "WMSGNL":"強烈季候風信號", "WRAINA":"黃色暴雨警告信號", "WRAINR":"紅色暴雨警告信號",
@@ -140,12 +140,19 @@ async function update() {
         const badges = document.getElementById('warning-badges');
         badges.innerHTML = '';
         
-        let activeWarnings = []; // 儲存生效中的警告名稱
+        let activeWarnings = [];
         
+        // 【修正重點】這裡改為讀取 warn[k].code，確保捕捉到最精確的警告代碼
         Object.keys(warn).forEach(k => {
             if(warn[k].actionCode === 'ISSUE') {
-                if(WARN_IMAGES[k]) badges.innerHTML += `<img class="warn-icon" src="https://www.hko.gov.hk/tc/textonly/img/warn/images/${WARN_IMAGES[k]}.gif">`;
-                if(WARN_NAMES[k]) activeWarnings.push(WARN_NAMES[k]);
+                const specificCode = warn[k].code; // 提取精確代碼 (例如 WRAINA)
+                
+                if(WARN_IMAGES[specificCode]) {
+                    badges.innerHTML += `<img class="warn-icon" src="https://www.hko.gov.hk/tc/textonly/img/warn/images/${WARN_IMAGES[specificCode]}.gif">`;
+                }
+                if(WARN_NAMES[specificCode]) {
+                    activeWarnings.push(WARN_NAMES[specificCode]);
+                }
             }
         });
         
@@ -159,7 +166,6 @@ async function update() {
     } catch(e) {}
 }
 
-// 初次載入與每分鐘自動更新
 update();
 setInterval(update, 60000);
 </script>
